@@ -28,7 +28,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .jump.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .allday{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .allday div{background:#fff4e0;color:#6b3d00;border:1px solid #f0c98a;border-radius:8px;padding:6px 10px;font-size:12px}
-.vp{overflow:auto;border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.vp{overflow:auto;scroll-snap-type:x mandatory;border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .vp::-webkit-scrollbar{height:5px;width:5px}
 .vp::-webkit-scrollbar-thumb{background:var(--strong);border-radius:3px}
 .hrow,.brow{display:flex;width:max-content;min-width:100%}
@@ -38,7 +38,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .times{z-index:3;font-size:11px;color:var(--faint)}
 .times span{position:absolute;left:0;transform:translateY(2px)}
 .harea,.carea{position:relative;flex:none}
-.grp{position:absolute;top:0;text-align:center;font-size:12px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:3px;white-space:nowrap}
+.grp{scroll-snap-align:start;position:absolute;top:0;text-align:center;font-size:12px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:3px;white-space:nowrap}
 .sub{position:absolute;top:25px;text-align:center;font-size:11px;color:var(--muted)}
 .col{position:absolute;top:0;bottom:0;border-radius:6px;background:repeating-linear-gradient(var(--surface) 0 calc(var(--h) - 1px),var(--line) calc(var(--h) - 1px) var(--h))}
 .ev{position:absolute;border:none;border-radius:6px;padding:4px 6px;font-size:12px;font-weight:600;text-align:left;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;line-height:1.25;z-index:1}
@@ -70,6 +70,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .rows div{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
 .rows dt{width:70px;flex:none;color:var(--muted)}
 .rows dd{margin:0;white-space:pre-line}
+@media (max-width:420px){.app{padding:14px 8px 18px}.ev{padding:3px 4px}}
 </style>
 </head>
 <body>
@@ -179,10 +180,12 @@ function restOf(title, t){
 }
 
 /* ---------- Spalten aus den Einstellungen ---------- */
-const CW = CONFIG.colWidth, GAP = 3, AGAP = CONFIG.areaGap, TW = 30;
+const GAP = 3, AGAP = CONFIG.areaGap, MIN_CW = 56;
+let CW = CONFIG.colWidth, TW = 30, CONTENT_W = 0;
 const COLS = [];      // { cal, label, q, area, x }
 const AREAS = [];     // { label, x, w }
-(function buildColumns(){
+function buildColumns(){
+  COLS.length = 0; AREAS.length = 0;
   let x = 0;
   CONFIG.areas.forEach((a, ai) => {
     if (ai > 0) x += AGAP;
@@ -193,8 +196,9 @@ const AREAS = [];     // { label, x, w }
     list.forEach((c, i) => { if (i > 0) x += GAP; COLS.push({ ...c, area:ai, x }); x += CW; });
     AREAS.push({ label:a.label, x:start, w:x-start, quarters: a.quarters || 0 });
   });
-})();
-const CONTENT_W = COLS[COLS.length-1].x + CW + 4;
+  CONTENT_W = COLS[COLS.length-1].x + CW + 4;
+}
+buildColumns();
 const CAL_NAMES = [...new Set(COLS.map(c => c.cal))];
 
 // "1/4 Platz", "½", "halber Platz" -> Anzahl Spalten (leer = alle)
@@ -280,26 +284,41 @@ async function loadWeek(mon){
 const H = CONFIG.hourPx, S = CONFIG.startHour, E = CONFIG.endHour, HEAD = 46;
 const vp = $("vp"), carea = $("carea"), harea = $("harea");
 vp.style.height = HEAD + CONFIG.visibleHours*H + 2 + "px";
-$("corner").style.width = $("times").style.width = TW + "px";
 $("corner").style.height = HEAD + "px";
 $("times").style.height = carea.style.height = (E-S)*H + "px";
-harea.style.width = carea.style.width = CONTENT_W + "px";
 harea.style.height = HEAD + "px";
 carea.style.setProperty("--h", H+"px");
-
 for (let h=S; h<E; h++){ const s=document.createElement("span"); s.style.top=(h-S)*H+"px"; s.textContent=h; $("times").appendChild(s); }
-AREAS.forEach(a => {
-  const g = document.createElement("div"); g.className = "grp";
-  g.style.left = a.x + "px"; g.style.width = a.w + "px"; g.textContent = a.label;
-  harea.appendChild(g);
-});
-COLS.forEach(c => {
-  if (c.label){
-    const s = document.createElement("div"); s.className = "sub";
-    s.style.left = c.x + "px"; s.style.width = CW + "px"; s.textContent = c.label;
-    harea.appendChild(s);
-  }
-});
+
+// Spaltenbreite so wählen, dass die erste Fläche (Platz) immer ganz zu sehen ist
+let lastW = 0;
+function layout(){
+  const w = vp.clientWidth; if (!w || w === lastW) return false;
+  lastW = w;
+  TW = w < 400 ? 24 : 30;
+  const first = CONFIG.areas[0];
+  const n = first.quarters || (first.columns || []).length || 1;
+  const fit = Math.floor((w - TW - (n-1)*GAP - 6) / n);
+  CW = Math.max(MIN_CW, Math.min(CONFIG.colWidth, fit));
+  buildColumns();
+  $("corner").style.width = $("times").style.width = TW + "px";
+  vp.style.scrollPaddingLeft = TW + "px";
+  harea.style.width = carea.style.width = CONTENT_W + "px";
+  harea.innerHTML = "";
+  AREAS.forEach(a => {
+    const g = document.createElement("div"); g.className = "grp";
+    g.style.left = a.x + "px"; g.style.width = a.w + "px"; g.textContent = a.label;
+    harea.appendChild(g);
+  });
+  COLS.forEach(c => {
+    if (c.label){
+      const s = document.createElement("div"); s.className = "sub";
+      s.style.left = c.x + "px"; s.style.width = CW + "px"; s.textContent = c.label;
+      harea.appendChild(s);
+    }
+  });
+  return true;
+}
 
 const layer = document.createElement("div"); layer.style.cssText = "position:absolute;inset:0";
 function drawBackground(){
@@ -314,21 +333,25 @@ function drawBackground(){
 const nowLine = document.createElement("div"); nowLine.className = "now";
 
 // Sprung-Knöpfe zu den Flächen
-const jumpBtns = AREAS.map(a => {
+const jumpBtns = CONFIG.areas.map((a, i) => {
   const b = document.createElement("button"); b.className = "jump"; b.textContent = a.label;
-  b.onclick = () => vp.scrollTo({ left: a.x, behavior: "smooth" });
+  b.onclick = () => { picked = i; vp.scrollTo({ left: AREAS[i].x, behavior: "smooth" }); };
   $("jumps").appendChild(b); return b;
 });
+let picked = null;
+vp.addEventListener("touchstart", () => { picked = null; }, { passive:true });
+vp.addEventListener("wheel", () => { picked = null; }, { passive:true });
 function updateJumps(){
   const x = vp.scrollLeft + 20;
   let cur = 0; AREAS.forEach((a,i) => { if (x >= a.x) cur = i; });
-  if (vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4) cur = AREAS.length-1;
+  if (vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4) cur = picked ?? AREAS.length-1;
   jumpBtns.forEach((b,i) => { b.classList.toggle("on", i===cur); b.setAttribute("aria-pressed", i===cur); });
   const fits = vp.scrollWidth <= vp.clientWidth + 2;
   $("jumps").style.display = fits ? "none" : "flex";
 }
 vp.addEventListener("scroll", updateJumps, { passive:true });
-window.addEventListener("resize", updateJumps);
+let rt = 0;
+window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (layout()) render(); else updateJumps(); }, 120); });
 
 /* ---------- Rendern ---------- */
 let renderToken = 0;
@@ -455,9 +478,17 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b){
   btn.setAttribute("aria-label", t.name+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
   btn.append(wide ? t.name : t.short);
   if (showTime && (b-a) >= 0.75){
-    const s=document.createElement("small");
-    s.textContent = hm(e.start)+"–"+hm(e.end) + (wide && bl.where ? " · " + bl.where : "");
-    btn.appendChild(s);
+    const bw = (COLS[c1].x + CW - COLS[c0].x) / lanes;
+    if (!wide && bw < 76 && (b-a) >= 1){
+      // schmaler Block: Zeit in zwei Zeilen
+      const s1=document.createElement("small"); s1.textContent = hm(e.start)+"–";
+      const s2=document.createElement("small"); s2.textContent = hm(e.end);
+      btn.append(s1, s2);
+    } else {
+      const s=document.createElement("small");
+      s.textContent = hm(e.start)+"–"+hm(e.end) + (wide && bl.where ? " · " + bl.where : "");
+      btn.appendChild(s);
+    }
   }
   btn.onclick = () => openSheet(bl, t);
   layer.appendChild(btn);
@@ -538,6 +569,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet()
 $("prev").onclick = () => { selected = addDays(selected,-7); render(); };
 $("next").onclick = () => { selected = addDays(selected, 7); render(); };
 
+layout();
 render().then(() => { vp.scrollTop = (CONFIG.defaultHour - S) * H; updateJumps(); });
 setInterval(() => { if (sameDay(new Date(), selected)) render(); }, 5*60*1000);
 </script>
