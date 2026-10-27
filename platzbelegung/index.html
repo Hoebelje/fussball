@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Platzbelegung</title>
 <style>
-:root{--bg:#fff;--surface:#f4f5f2;--ink:#16201a;--muted:#55605a;--faint:#8a938d;--line:#e2e5df;--strong:#c9cec6;--accent:#16402b;--now:#c62828}
+:root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--strong:#B4C3E6;--accent:#2356D9;--now:#D93025}
 :root{color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 .app{max-width:560px;margin:0 auto;padding:16px 12px 20px}
 .club{margin:0;font-size:13px;color:var(--muted)}
-h1{margin:0 0 12px;font-size:22px;font-weight:600}
+h1{margin:0 0 12px;font-size:22px;font-weight:700;color:var(--accent)}
 button{font:inherit;color:inherit;cursor:pointer}
 .weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .weeknav span{font-size:14px;font-weight:600}
@@ -20,13 +20,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
 .day{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 0;min-height:48px;font-size:11px;color:var(--muted);line-height:1.3}
 .day b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
-.day.today b{color:var(--now)}
+.day.today b{color:var(--accent)}
+.day.today{border-color:var(--accent)}
 .day.sel{background:var(--accent);border-color:var(--accent);color:#fff}
 .day.sel b{color:#fff}
 .allday{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .allday div{background:#fff4e0;color:#6b3d00;border:1px solid #f0c98a;border-radius:8px;padding:6px 10px;font-size:12px}
 .heads,.grid{display:grid;gap:3px}
-.heads{font-size:12px;font-weight:600;margin-bottom:4px;text-align:center}
+.heads{font-size:12px;font-weight:700;margin-bottom:4px;text-align:center;color:var(--accent)}
 .vp{height:252px;overflow-y:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch}
 .grid{position:relative}
 .times{position:relative;font-size:11px;color:var(--faint)}
@@ -123,7 +124,7 @@ const CONFIG = {
     "U19 (W)":  { short: "U19 W",  name: "U19 (W)",  bg: "#FAECE7", fg: "#712B13" },
     "U19 (M)":  { short: "U19 M",  name: "U19 (M)",  bg: "#F1EFE8", fg: "#444441" },
     "Frauen":   { short: "Frauen", name: "Frauen",   bg: "#FBEAF0", fg: "#72243E" },
-    "Herren 1": { short: "H1",     name: "Herren 1", bg: "#E6F1FB", fg: "#0C447C" },
+    "Herren 1": { short: "H1",     name: "Herren 1", bg: "#C9DCFA", fg: "#0C447C" },
     "Herren 2": { short: "H2",     name: "Herren 2", bg: "#EEEDFE", fg: "#3C3489" }
   },
   otherColor: { bg: "#ECEDEA", fg: "#2C2F2D" }
