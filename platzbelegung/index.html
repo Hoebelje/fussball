@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Platzbelegung</title>
+<style>
+:root{--bg:#fff;--surface:#f4f5f2;--ink:#16201a;--muted:#55605a;--faint:#8a938d;--line:#e2e5df;--strong:#c9cec6;--accent:#16402b;--now:#c62828}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:560px;margin:0 auto;padding:16px 12px 20px}
+.club{margin:0;font-size:13px;color:var(--muted)}
+h1{margin:0 0 12px;font-size:22px;font-weight:600}
+button{font:inherit;color:inherit;cursor:pointer}
+.weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.weeknav span{font-size:14px;font-weight:600}
+.iconbtn{width:44px;height:44px;border:none;background:transparent;border-radius:10px;font-size:22px;line-height:1}
+.iconbtn:hover{background:var(--surface)}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.day{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 0;min-height:48px;font-size:11px;color:var(--muted);line-height:1.3}
+.day b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
+.day.today b{color:var(--now)}
+.day.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.day.sel b{color:#fff}
+.allday{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
+.allday div{background:#fff4e0;color:#6b3d00;border:1px solid #f0c98a;border-radius:8px;padding:6px 10px;font-size:12px}
+.heads,.grid{display:grid;gap:3px}
+.heads{font-size:12px;font-weight:600;margin-bottom:4px;text-align:center}
+.vp{height:252px;overflow-y:auto;border-top:1px solid var(--line);border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch}
+.grid{position:relative}
+.times{position:relative;font-size:11px;color:var(--faint)}
+.times span{position:absolute;left:0;transform:translateY(2px)}
+.col{position:relative;border-radius:6px;background:repeating-linear-gradient(var(--surface) 0 calc(var(--h) - 1px),var(--line) calc(var(--h) - 1px) var(--h))}
+.sep{border-left:1px dashed var(--strong);margin-left:3px}
+.ev{position:absolute;border:none;border-radius:6px;padding:4px 5px;font-size:12px;font-weight:600;text-align:left;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;line-height:1.25}
+.ev small{font-weight:400;font-size:11px;opacity:.85}
+.ev.single{outline:1.5px dashed currentColor;outline-offset:-2px}
+.ev.multi{background:var(--bg);border:1px solid var(--strong);color:var(--ink);padding:3px;gap:1px}
+.chip{display:block;width:100%;border-radius:4px;padding:0 4px;font-size:11px;font-weight:600;line-height:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip.big{display:inline-block;width:auto;min-width:40px;text-align:center;font-size:12px;line-height:22px}
+.ev.multi.row{flex-direction:row;align-items:center}
+.ev.multi.row .chip{width:auto;flex:none}
+.more{font-size:11px;font-weight:500;color:var(--muted);line-height:15px;white-space:nowrap;padding-left:2px}
+.now{position:absolute;right:0;border-top:2px solid var(--now);pointer-events:none;z-index:2}
+.hint{margin:8px 0 0;font-size:11px;color:var(--faint);text-align:center}
+.legend{margin:4px 0 0;font-size:11px;color:var(--muted);text-align:center}
+.status{margin:8px 0 0;font-size:12px;color:var(--muted);text-align:center}
+.status.err{color:var(--now)}
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity .2s}
+.backdrop.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-width:560px;margin:0 auto;background:var(--bg);border-radius:20px 20px 0 0;padding:10px 18px 22px;transform:translateY(105%);transition:transform .25s ease;z-index:5}
+.sheet.on{transform:none}
+.grab{width:40px;height:4px;border-radius:2px;background:var(--strong);margin:0 auto 14px}
+.sh-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.badge{width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex:none}
+.sh-head h2{margin:0;font-size:17px;font-weight:600}
+.sh-head p{margin:0;font-size:12px;color:var(--muted)}
+.sh-head .iconbtn{margin-left:auto}
+.rows{font-size:14px;line-height:1.5}
+.rows div{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.rows dt{width:70px;flex:none;color:var(--muted)}
+.rows dd{margin:0;white-space:pre-line}
+@media (prefers-color-scheme:dark){:root{--bg:#121513;--surface:#1c211e;--ink:#eef1ec;--muted:#aab3ad;--faint:#89928c;--line:#2b322e;--strong:#45504a;--accent:#cfe8d8}.day.sel{color:#121513}.day.sel b{color:#121513}}
+</style>
+</head>
+<body>
+<div class="app">
+  <p class="club">SV Agrippina Germania Köln</p>
+  <h1>Platzbelegung</h1>
+  <div class="weeknav">
+    <button class="iconbtn" id="prev" aria-label="Vorherige Woche">‹</button>
+    <span id="weeklabel"></span>
+    <button class="iconbtn" id="next" aria-label="Nächste Woche">›</button>
+  </div>
+  <div class="days" id="days"></div>
+  <div class="allday" id="allday"></div>
+  <div class="heads" id="heads"></div>
+  <div class="vp" id="vp"><div class="grid" id="grid"></div></div>
+  <p class="hint">↕ Scrollen für frühere und spätere Zeiten · Termin antippen für Details</p>
+  <p class="legend">Volle Fläche = Serientermin · gestrichelt = Einzeltermin</p>
+  <p class="status" id="status" role="status"></p>
+</div>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sh-title">
+  <div class="grab"></div>
+  <div class="sh-head">
+    <span class="badge" id="sh-badge"></span>
+    <div><h2 id="sh-title"></h2><p id="sh-kind"></p></div>
+    <button class="iconbtn" id="sh-close" aria-label="Schließen">×</button>
+  </div>
+  <dl class="rows" id="sh-rows"></dl>
+</div>
+
+<script>
+/* ================== EINSTELLUNGEN ================== */
+const CONFIG = {
+  // Web-App-URL aus Google Apps Script (endet auf /exec).
+  // Leer lassen = Demo-Daten.
+  scriptUrl: "https://script.google.com/macros/s/AKfycbzxFEZp0M-mBMeFUS-SV-ajk-0VGehKDrWb2-u_1lBB0O3QANIGggFnAAu9baVEymxbvw/exec",
+
+  // Spalten – die Namen müssen genau wie im Apps Script geschrieben sein.
+  calendars: [
+    { name: "Platz" },
+    { name: "Box 1" },
+    { name: "Box 2" },
+    { name: "Weiden" }
+  ],
+  separatorBefore: 3,   // Trennlinie vor der 4. Spalte (Weiden). null = keine
+
+  startHour: 8,         // frühester Zeitpunkt im Raster
+  endHour: 22,          // spätester Zeitpunkt im Raster
+  defaultHour: 16,      // hier startet die Ansicht
+  visibleHours: 4,      // sichtbarer Bereich ohne Scrollen (16–20)
+  hourPx: 60,
+
+  // Termin-Titel beginnt mit dem Kürzel, z. B. "U17 (W)" oder "U17 (W) Training".
+  // short = Beschriftung im Raster (kurz halten, die Spalten sind schmal).
+  teams: {
+    "U13 (W)":  { short: "U13 W",  name: "U13 (W)",  bg: "#E1F5EE", fg: "#085041" },
+    "U15 (W)":  { short: "U15 W",  name: "U15 (W)",  bg: "#EAF3DE", fg: "#27500A" },
+    "U17 (W)":  { short: "U17 W",  name: "U17 (W)",  bg: "#FAEEDA", fg: "#633806" },
+    "U19 (W)":  { short: "U19 W",  name: "U19 (W)",  bg: "#FAECE7", fg: "#712B13" },
+    "U19 (M)":  { short: "U19 M",  name: "U19 (M)",  bg: "#F1EFE8", fg: "#444441" },
+    "Frauen":   { short: "Frauen", name: "Frauen",   bg: "#FBEAF0", fg: "#72243E" },
+    "Herren 1": { short: "H1",     name: "Herren 1", bg: "#E6F1FB", fg: "#0C447C" },
+    "Herren 2": { short: "H2",     name: "Herren 2", bg: "#EEEDFE", fg: "#3C3489" }
+  },
+  otherColor: { bg: "#ECEDEA", fg: "#2C2F2D" }
+};
+/* =================================================== */
+
+const DAYS = ["Mo","Di","Mi","Do","Fr","Sa","So"];
+const LONG = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
+const $ = id => document.getElementById(id);
+const DEMO = !CONFIG.scriptUrl;
+const cache = {};
+let selected = startOfDay(new Date());
+
+function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function monday(d){ const x = startOfDay(d); return addDays(x, -((x.getDay()+6)%7)); }
+function sameDay(a,b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+function key(d){ return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+function hm(d){ return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function dm(d){ return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."; }
+function hours(d){ return d.getHours() + d.getMinutes()/60; }
+
+const TEAM_KEYS = Object.keys(CONFIG.teams).sort((a,b)=>b.length-a.length);
+const norm = x => (x||"").toUpperCase().replace(/\s+/g,"");
+function teamOf(title){
+  const t = norm(title);
+  for (const k of TEAM_KEYS) {
+    if (t.startsWith(norm(k))) return { key:k, short: CONFIG.teams[k].short || k, ...CONFIG.teams[k] };
+  }
+  const first = (title||"Belegt").trim().split(/\s+/)[0].slice(0,6);
+  return { key:first, short:first, name:title||"Belegt", ...CONFIG.otherColor };
+}
+function restOf(title, t){
+  // Titel ohne Team-Kürzel, z. B. "U17 (W) Testspiel" -> "Testspiel"
+  const k = norm(t.key); let i = 0, n = 0; const s = title||"";
+  while (i < s.length && n < k.length){ if (!/\s/.test(s[i])) n++; i++; }
+  return n === k.length ? s.slice(i).trim() : "";
+}
+
+/* ---------- Daten ---------- */
+function demoWeek(mon){
+  const P = {
+    0:[[0,"Herren 2 Training",19,20.5,1],[1,"U15 (W) Training",16,17.5,1],[3,"U17 (W) Training",17,18.5,1]],
+    1:[[0,"U15 (W) Training",16.5,18,1],[0,"U17 (W) Training",17.5,19,1],[0,"Frauen Training",17.5,19,1],[0,"U19 (W) Training",17.5,19,1],[0,"Herren 1 Training",19.5,21.5,1],[1,"Herren 2 Training",16.5,18,1],[1,"U19 (M) Training",19.5,21,1],[2,"Herren 2 Testspiel",18.5,20,0],[3,"U19 (M) Training",17,18.5,1]],
+    2:[[0,"U19 (W) Training",17,18.5,1],[1,"U15 (W) Training",16,17.5,1],[2,"Frauen Training",18,19.5,1]],
+    3:[[0,"Frauen Training",17.5,19,1],[0,"Herren 1 Training",19.5,21.5,1],[2,"U17 (W) Training",16.5,18,1],[3,"U19 (M) Training",19,20.5,1]],
+    4:[[0,"U19 (W) Training",16.5,18,1],[0,"Herren 2 Training",18,19.5,1],[0,"U19 (M) Training",19.5,21,1]],
+    5:[[0,"U15 (W) Heimspiel",10,12,0],[0,"U17 (W) Heimspiel",13,15,0]],
+    6:[[0,"Herren 1 Heimspiel",15,17,0]]
+  };
+  const out = [];
+  for (let d=0; d<7; d++) (P[d]||[]).forEach(([col,title,a,b,series])=>{
+    const s = addDays(mon,d); s.setHours(Math.floor(a),(a%1)*60);
+    const e = addDays(mon,d); e.setHours(Math.floor(b),(b%1)*60);
+    out.push({ col, title, start:s, end:e, allDay:false, series:!!series, desc: series ? "Wöchentlich" : "" });
+  });
+  return out;
+}
+
+async function loadWeek(mon){
+  const k = key(mon);
+  if (cache[k]) return cache[k];
+  if (DEMO) return (cache[k] = demoWeek(mon));
+  const url = CONFIG.scriptUrl + (CONFIG.scriptUrl.includes("?") ? "&" : "?") +
+    "from=" + encodeURIComponent(mon.toISOString()) +
+    "&to=" + encodeURIComponent(addDays(mon,7).toISOString());
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("Status " + r.status);
+  const j = await r.json();
+  if (j.error) throw new Error(j.error);
+  const names = CONFIG.calendars.map(c => c.name);
+  const list = (j.events||[]).map(e => ({
+    col: names.indexOf(e.cal),
+    title: e.title || "Belegt",
+    desc: (e.desc||"").replace(/<[^>]*>/g," ").trim(),
+    allDay: !!e.allDay,
+    start: new Date(e.start),
+    end: new Date(e.end),
+    series: !!e.series
+  })).filter(e => e.col >= 0);
+  return (cache[k] = list);
+}
+
+/* ---------- Aufbau ---------- */
+const N = CONFIG.calendars.length;
+const sepAt = CONFIG.separatorBefore;
+const tmpl = ["30px"];
+for (let i=0;i<N;i++){ if (i===sepAt) tmpl.push("8px"); tmpl.push("minmax(0,1fr)"); }
+$("heads").style.gridTemplateColumns = tmpl.join(" ");
+$("grid").style.gridTemplateColumns = tmpl.join(" ");
+$("heads").appendChild(document.createElement("span"));
+CONFIG.calendars.forEach((c,i)=>{
+  if (i===sepAt) $("heads").appendChild(document.createElement("span"));
+  const s = document.createElement("span"); s.textContent = c.name; $("heads").appendChild(s);
+});
+
+const H = CONFIG.hourPx, S = CONFIG.startHour, E = CONFIG.endHour;
+const grid = $("grid");
+grid.style.height = (E-S)*H + "px";
+grid.style.setProperty("--h", H+"px");
+$("vp").style.height = CONFIG.visibleHours*H + 2 + "px";
+
+const times = document.createElement("div"); times.className = "times";
+for (let h=S; h<E; h++){ const s=document.createElement("span"); s.style.top=(h-S)*H+"px"; s.textContent=h; times.appendChild(s); }
+grid.appendChild(times);
+const cols = [];
+for (let i=0;i<N;i++){
+  if (i===sepAt){ const sp=document.createElement("div"); sp.className="sep"; grid.appendChild(sp); }
+  const c=document.createElement("div"); c.className="col"; grid.appendChild(c); cols.push(c);
+}
+const nowLine = document.createElement("div"); nowLine.className="now"; nowLine.style.left="26px"; grid.appendChild(nowLine);
+
+/* ---------- Rendern ---------- */
+let renderToken = 0;
+async function render(){
+  const token = ++renderToken;
+  const mon = monday(selected);
+  const today = startOfDay(new Date());
+  const sun = addDays(mon,6);
+  $("weeklabel").textContent = dm(mon) + " – " + dm(sun) + sun.getFullYear();
+
+  const days = $("days"); days.innerHTML = "";
+  for (let d=0; d<7; d++){
+    const date = addDays(mon,d);
+    const b = document.createElement("button");
+    b.className = "day" + (sameDay(date,selected)?" sel":"") + (sameDay(date,today)?" today":"");
+    b.setAttribute("aria-label", LONG[d]+", "+dm(date));
+    b.setAttribute("aria-pressed", sameDay(date,selected));
+    b.append(DAYS[d]); const n=document.createElement("b"); n.textContent=date.getDate(); b.appendChild(n);
+    b.onclick = () => { selected = date; render(); };
+    days.appendChild(b);
+  }
+
+  cols.forEach(c => c.innerHTML = "");
+  $("allday").innerHTML = "";
+  $("status").className = "status";
+  $("status").textContent = DEMO ? "Demo-Daten – Kalender in den Einstellungen eintragen." : "Lädt …";
+
+  let events;
+  try { events = await loadWeek(mon); }
+  catch(err){
+    if (token!==renderToken) return;
+    $("status").className = "status err";
+    $("status").textContent = "Belegung konnte nicht geladen werden: " + err.message;
+    return;
+  }
+  if (token!==renderToken) return;
+  if (!DEMO) $("status").textContent = "";
+
+  const dayStart = startOfDay(selected), dayEnd = addDays(dayStart,1);
+
+  events.filter(e => e.allDay && e.start < dayEnd && e.end > dayStart).forEach(e => {
+    const d = document.createElement("div");
+    d.textContent = CONFIG.calendars[e.col].name + ": " + e.title;
+    $("allday").appendChild(d);
+  });
+
+  const dayEv = events.filter(e => !e.allDay && sameDay(e.start, selected));
+  for (let i=0;i<N;i++){
+    const list = dayEv.filter(e => e.col===i).map(e => ({
+      ...e, a: Math.max(S, hours(e.start)), b: Math.min(E, sameDay(e.end,e.start) ? hours(e.end) : E)
+    })).filter(e => e.b > e.a).sort((x,y) => x.a-y.a || x.b-y.b);
+
+    // Gruppen von Terminen, die sich (auch nur teilweise) überschneiden
+    const clusters = []; let cur = null;
+    list.forEach(e => {
+      if (cur && e.a < cur.end){ cur.items.push(e); cur.end = Math.max(cur.end, e.b); }
+      else { cur = { items:[e], end:e.b }; clusters.push(cur); }
+    });
+
+    clusters.forEach(cl => {
+      // Zeitabschnitte: neuer Abschnitt, sobald ein Team dazukommt oder geht
+      const pts = [...new Set(cl.items.flatMap(e => [e.a, e.b]))].sort((x,y)=>x-y);
+      const segs = [];
+      for (let k=0; k<pts.length-1; k++){
+        const a = pts[k], b = pts[k+1];
+        const act = cl.items.filter(e => e.a < b && e.b > a);
+        if (!act.length) continue;
+        const sig = act.map(e => cl.items.indexOf(e)).join(",");
+        const last = segs[segs.length-1];
+        if (last && last.sig === sig && last.b === a) last.b = b;
+        else segs.push({ a, b, act, sig });
+      }
+      const maxC = Math.max(...segs.map(s => s.act.length));
+      if (maxC <= 2) drawLanes(cl.items, i);
+      else segs.forEach(s => drawSeg(s, i));
+    });
+  }
+
+  const now = new Date();
+  if (sameDay(now, selected) && hours(now) >= S && hours(now) <= E){
+    nowLine.style.display = "block"; nowLine.style.top = (hours(now)-S)*H + "px";
+  } else nowLine.style.display = "none";
+}
+
+/* ---------- Blöcke zeichnen ---------- */
+function fh(x){ const h=Math.floor(x+1e-6), m=Math.round((x-h)*60); return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"); }
+
+function placeBlock(btn, a, b){
+  btn.style.top = (a-S)*H + 2 + "px";
+  btn.style.height = Math.max(20,(b-a)*H - 4) + "px";
+}
+
+function singleBlock(e, colIdx, a, b, showTime){
+  const t = teamOf(e.title);
+  const btn = document.createElement("button");
+  btn.className = "ev" + (e.series ? "" : " single");
+  placeBlock(btn, a, b);
+  btn.style.background = t.bg; btn.style.color = t.fg;
+  btn.setAttribute("aria-label", t.name+", "+CONFIG.calendars[colIdx].name+", "+hm(e.start)+" bis "+hm(e.end));
+  btn.append(t.short);
+  if (showTime && (b-a) >= 1){ const s=document.createElement("small"); s.textContent=hm(e.start)+"–"+hm(e.end); btn.appendChild(s); }
+  btn.onclick = () => openSheet(e, t);
+  return btn;
+}
+
+// bis zu 2 Teams gleichzeitig: nebeneinander
+function drawLanes(items, colIdx){
+  const laneEnd = [];
+  items.forEach(e => {
+    let l = laneEnd.findIndex(t => t <= e.a);
+    if (l === -1){ l = laneEnd.length; laneEnd.push(e.b); } else laneEnd[l] = e.b;
+    e.lane = l;
+  });
+  const lanes = laneEnd.length;
+  items.forEach(e => {
+    const btn = singleBlock(e, colIdx, e.a, e.b, true);
+    btn.style.left = "calc(" + (e.lane*100/lanes) + "% + 2px)";
+    btn.style.width = "calc(" + (100/lanes) + "% - 4px)";
+    cols[colIdx].appendChild(btn);
+  });
+}
+
+// ab 3 Teams: ein Block pro Zeitabschnitt
+function drawSeg(s, colIdx){
+  if (s.act.length === 1){
+    const btn = singleBlock(s.act[0], colIdx, s.a, s.b, false);
+    const sm = document.createElement("small");
+    if ((s.b-s.a) >= 0.75){ sm.textContent = fh(s.a)+"–"+fh(s.b); btn.appendChild(sm); }
+    btn.style.left = "2px"; btn.style.right = "2px";
+    cols[colIdx].appendChild(btn);
+    return;
+  }
+  const btn = document.createElement("button");
+  btn.className = "ev multi";
+  placeBlock(btn, s.a, s.b);
+  btn.style.left = "2px"; btn.style.right = "2px";
+  const names = s.act.map(e => teamOf(e.title));
+  btn.setAttribute("aria-label", s.act.length+" Teams, "+CONFIG.calendars[colIdx].name+", "+fh(s.a)+" bis "+fh(s.b)+": "+names.map(t=>t.name).join(", "));
+  const h = Math.max(20,(s.b-s.a)*H - 4);
+  const fit = Math.max(1, Math.floor((h - 5) / 16));
+  const shown = names.length <= fit ? names : names.slice(0, Math.max(1, fit-1));
+  shown.forEach(t => {
+    const c = document.createElement("span"); c.className = "chip";
+    c.textContent = t.short; c.style.background = t.bg; c.style.color = t.fg;
+    btn.appendChild(c);
+  });
+  if (shown.length < names.length){
+    const more = document.createElement("span"); more.className = "more";
+    more.textContent = "+" + (names.length - shown.length) + (fit === 1 ? "" : " Teams");
+    btn.appendChild(more);
+  }
+  if (fit === 1 && shown.length < names.length) btn.classList.add("row");
+  btn.onclick = () => openMulti(s, colIdx);
+  cols[colIdx].appendChild(btn);
+}
+
+/* ---------- Detail-Panel ---------- */
+function row(label, value){
+  const d=document.createElement("div"), dt=document.createElement("dt"), dd=document.createElement("dd");
+  dt.textContent=label; dd.textContent=value; d.append(dt,dd); return d;
+}
+let lastFocus = null;
+function openSheet(e, t){
+  lastFocus = document.activeElement;
+  const b = $("sh-badge"); b.textContent = t.short; b.style.background = t.bg; b.style.color = t.fg;
+  const rest = restOf(e.title, t);
+  $("sh-title").textContent = rest ? t.name + " · " + rest : t.name;
+  $("sh-kind").textContent = e.series ? "Serientermin" : "Einzeltermin";
+  const rows = $("sh-rows"); rows.innerHTML = "";
+  rows.append(row("Fläche", CONFIG.calendars[e.col].name));
+  rows.append(row("Wann", LONG[(e.start.getDay()+6)%7] + ", " + dm(e.start) + " · " + hm(e.start) + "–" + hm(e.end) + " Uhr"));
+  if (e.desc) rows.append(row("Hinweis", e.desc));
+  $("sheet").classList.add("on"); $("backdrop").classList.add("on");
+  $("sh-close").focus();
+}
+function openMulti(s, colIdx){
+  lastFocus = document.activeElement;
+  const b = $("sh-badge"); b.textContent = s.act.length; b.style.background = "var(--surface)"; b.style.color = "var(--ink)";
+  $("sh-title").textContent = s.act.length + " Teams gleichzeitig";
+  $("sh-kind").textContent = CONFIG.calendars[colIdx].name + " · " + fh(s.a) + "–" + fh(s.b) + " Uhr";
+  const rows = $("sh-rows"); rows.innerHTML = "";
+  s.act.slice().sort((x,y)=>x.start-y.start).forEach(e => {
+    const t = teamOf(e.title);
+    const d=document.createElement("div"), dt=document.createElement("dt"), dd=document.createElement("dd");
+    const chip=document.createElement("span"); chip.className="chip big";
+    chip.textContent=t.short; chip.style.background=t.bg; chip.style.color=t.fg;
+    dt.appendChild(chip);
+    dd.textContent = hm(e.start) + "–" + hm(e.end) + " Uhr" + (e.series ? "" : " · einmalig") + (e.desc ? "\n" + e.desc : "");
+    d.append(dt, dd); rows.appendChild(d);
+  });
+  $("sheet").classList.add("on"); $("backdrop").classList.add("on");
+  $("sh-close").focus();
+}
+function closeSheet(){
+  $("sheet").classList.remove("on"); $("backdrop").classList.remove("on");
+  if (lastFocus) lastFocus.focus();
+}
+$("sh-close").onclick = closeSheet;
+$("backdrop").onclick = closeSheet;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
+
+$("prev").onclick = () => { selected = addDays(selected,-7); render(); };
+$("next").onclick = () => { selected = addDays(selected, 7); render(); };
+
+render().then(() => { $("vp").scrollTop = (CONFIG.defaultHour - S) * H; });
+setInterval(() => { if (sameDay(new Date(), selected)) render(); }, 5*60*1000);
+</script>
+</body>
+</html>
