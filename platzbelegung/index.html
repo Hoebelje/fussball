@@ -6,6 +6,7 @@
 <title>Platzbelegung</title>
 <style>
 :root{--bg:#fff;--surface:#f4f5f2;--ink:#16201a;--muted:#55605a;--faint:#8a938d;--line:#e2e5df;--strong:#c9cec6;--accent:#16402b;--now:#c62828}
+:root{color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 .app{max-width:560px;margin:0 auto;padding:16px 12px 20px}
@@ -60,7 +61,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 .rows div{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
 .rows dt{width:70px;flex:none;color:var(--muted)}
 .rows dd{margin:0;white-space:pre-line}
-@media (prefers-color-scheme:dark){:root{--bg:#121513;--surface:#1c211e;--ink:#eef1ec;--muted:#aab3ad;--faint:#89928c;--line:#2b322e;--strong:#45504a;--accent:#cfe8d8}.day.sel{color:#121513}.day.sel b{color:#121513}}
 </style>
 </head>
 <body>
