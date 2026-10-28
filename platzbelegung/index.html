@@ -143,7 +143,9 @@ const CONFIG = {
     "Herren 2": { short: "H2",     name: "Herren 2", bg: "#EEEDFE", fg: "#3C3489" },
     "IDEAL":    { short: "IDEAL",  name: "IDEAL C.F. Casa de España", bg: "#E4E7EC", fg: "#2C3442" }
   },
-  otherColor: { bg: "#ECEDEA", fg: "#2C2F2D" }
+  otherColor: { bg: "#ECEDEA", fg: "#2C2F2D" },
+  // Vereinsname vor den eigenen Teams (alle Teams oben außer IDEAL)
+  ownClub: "Agrippina"
 };
 /* =================================================== */
 
@@ -169,7 +171,7 @@ const norm = x => (x||"").toUpperCase().replace(/\s+/g,"");
 function teamOf(title){
   const t = norm(title);
   for (const k of TEAM_KEYS) {
-    if (t.startsWith(norm(k))) return { key:k, short: CONFIG.teams[k].short || k, ...CONFIG.teams[k] };
+    if (t.startsWith(norm(k))) return { key:k, short: CONFIG.teams[k].short || k, club: k === "IDEAL" ? "" : CONFIG.ownClub, ...CONFIG.teams[k] };
   }
   const first = (title||"Belegt").trim().split(/\s+/)[0].slice(0,6);
   return { key:first, short:first, name:title||"Belegt", ...CONFIG.otherColor };
@@ -486,10 +488,12 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b){
   // Teamteil aus dem Titel, z. B. "IDEAL U13 Heimspiel – …" -> "IDEAL U13"
   const head = (e.title||"").split(/\s+–\s+|\s+(?=(Heimspiel|Kinderfestival|Training|Testspiel|Spiel)\b)/i)[0].trim();
   const extra = norm(head).startsWith(norm(t.key)) && norm(head).length > norm(t.key).length ? head.slice(t.key.length).trim() : "";
-  btn.setAttribute("aria-label", (extra ? t.key+" "+extra : t.name)+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
-  btn.append(wide ? (extra ? t.key + " " + extra : t.name) : t.short);
-  if (!wide && extra){ const x=document.createElement("small"); x.className="team"; x.textContent=extra; btn.appendChild(x); }
-  const px = (b-a)*H - 4 - (!wide && extra ? 14 : 0);
+  btn.setAttribute("aria-label", (t.club ? t.club+" "+t.name : (extra ? t.key+" "+extra : t.name))+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
+  // Eigene Teams: "Agrippina U15 (W)", schmal: "Agrippina" + Zeile "U15 W"
+  const sub = t.club ? t.short : extra;
+  btn.append(wide ? (t.club ? t.club + " " + t.name : (extra ? t.key + " " + extra : t.name)) : (t.club || t.short));
+  if (!wide && sub){ const x=document.createElement("small"); x.className="team"; x.textContent=sub; btn.appendChild(x); }
+  const px = (b-a)*H - 4 - (!wide && sub ? 14 : 0);
   if (showTime && px >= 34){
     const bw = (COLS[c1].x + CW - COLS[c0].x) / lanes;
     if (!wide && bw < 76 && px < 52){
@@ -547,7 +551,8 @@ function openSheet(bl, t){
   lastFocus = document.activeElement;
   const b = $("sh-badge"); b.textContent = t.short; b.style.background = t.bg; b.style.color = t.fg;
   const rest = restOf(e.title, t);
-  $("sh-title").textContent = rest ? t.name + " · " + rest : t.name;
+  const nm = (t.club ? t.club + " " : "") + t.name;
+  $("sh-title").textContent = rest ? nm + " · " + rest : nm;
   $("sh-kind").textContent = e.series ? "Serientermin" : "Einzeltermin";
   const rows = $("sh-rows"); rows.innerHTML = "";
   rows.append(row("Fläche", e.cal + (bl.where ? " · " + bl.where : "")));
