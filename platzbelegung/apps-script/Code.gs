@@ -221,7 +221,8 @@ function geplanteEintraege() {
 /** Teamname ohne Vereinsnamen, z. B. "Casa España U13" -> "U13", "Casa España I" -> "Herren I" */
 function teamName(s, v) {
   const rest = s.heim.replace(/-\s*Kinderfestival/i, '').replace(/ideal\s*c\.?\s*f\.?/i, '').replace(v.name, '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim();
-  if (!rest) return s.mannschaft;
+  const klammer = (s.heim.match(/\((U\d+[^)]*)\)/i) || [])[1];
+  if (!rest) return klammer || s.mannschaft;
   if (/^(I{1,3}|IV|V|\d)$/.test(rest)) return s.mannschaft + ' ' + rest;
   return rest;
 }
