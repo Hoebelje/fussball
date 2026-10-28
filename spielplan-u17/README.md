@@ -2,7 +2,7 @@
 
 Die Seite zeigt alle Wochenenden der Saison. Wochenenden ohne Spiel erscheinen automatisch als „spielfrei“.
 
-Adresse: https://hoebelje.github.io/fussball-widget-Verein/spielplan-u17/
+Adresse: https://hoebelje.github.io/fussball/spielplan-u17/
 
 ## Termine bearbeiten
 
