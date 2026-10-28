@@ -34,6 +34,7 @@ li.next{box-shadow:0 0 0 2px var(--accent)}
 .editing li.item .match::after{content:" ✎";font-weight:400;color:var(--accent);font-size:13px}
 .editing li.free .match::after{content:" + Spiel eintragen";color:var(--accent);font-size:13px}
 .we{font-size:13px;font-weight:600;color:var(--muted);grid-row:span 2}
+.we .kw{display:block;font-size:11px;font-weight:500;color:var(--faint);margin-top:2px}
 .match{font-size:15px;font-weight:600;line-height:1.35}
 .meta{font-size:12px;color:var(--muted)}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;margin-right:6px;background:var(--surface);color:var(--accent)}
@@ -116,6 +117,8 @@ const dm=d=>`${pad(d.getDate())}.${pad(d.getMonth()+1)}.`;
 const parse=s=>{const[y,m,t]=s.split("-").map(Number);return new Date(y,m-1,t)};
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const isUs=n=>/agrippina/i.test(n||"");
+const kw=s=>{const d=parse(s);d.setDate(d.getDate()+3-(d.getDay()+6)%7);const w1=new Date(d.getFullYear(),0,4);return 1+Math.round(((d-w1)/864e5-3+(w1.getDay()+6)%7)/7)};
+const weHtml=(label,datum)=>`<span class="we">${esc(label)}<span class="kw">(KW${kw(datum)})</span></span>`;
 const $=id=>document.getElementById(id);
 
 let data,filter="alle";
@@ -168,7 +171,7 @@ function render(){
       if(!slot.frei)continue;
       if(filter!=="alle"&&!(editMode&&offen&&offen.datum===slot.frei))continue;
       if(editMode&&offen&&offen.typ==="neu"&&offen.datum===slot.frei) items=formHtml(null,slot.frei);
-      else items=`<li class="item free${past?" past":""}" data-frei="${slot.frei}"><span class="we">${slot.label}</span><span class="match">spielfrei</span></li>`;
+      else items=`<li class="item free${past?" past":""}" data-frei="${slot.frei}">${weHtml(slot.label,slot.frei)}<span class="match">spielfrei</span></li>`;
     }else{
       for(const {s:g,i} of games){
         const home=isUs(g.heim), ab=istAbgesetzt(g);
@@ -237,7 +240,7 @@ function spielHtml(g,i,label,cls){
   const ab=istAbgesetzt(g);
   const aend=(!ab&&g.spielnr)?aenderungsText(g):"";
   const pille=ab?`<span class="pill red">Abgesetzt</span>`:aend?`<span class="pill amber">${g.vorher&&g.vorher.datum?"Verlegt":"Geändert"}</span>`:"";
-  return `<li class="${cls}" data-idx="${i}"><span class="we">${esc(label)}</span>
+  return `<li class="${cls}" data-idx="${i}">${weHtml(label,g.datum)}
     <span class="match"><span class="o">${esc(gegner)}</span>${pille}</span>
     <span class="meta"><span class="o"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${esc(g.zeit)} Uhr`:""}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></span>${aend?`
     <span class="hinweis">${aend}</span>`:""}</li>`;
