@@ -28,7 +28,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .jump.on{background:var(--accent);border-color:var(--accent);color:#fff}
 .allday{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .allday div{background:#fff4e0;color:#6b3d00;border:1px solid #f0c98a;border-radius:8px;padding:6px 10px;font-size:12px}
-.vp{overflow:auto;scroll-snap-type:x mandatory;border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.vp{overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
 .vp::-webkit-scrollbar{height:5px;width:5px}
 .vp::-webkit-scrollbar-thumb{background:var(--strong);border-radius:3px}
 .hrow,.brow{display:flex;width:max-content;min-width:100%}
@@ -43,6 +43,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .col{position:absolute;top:0;bottom:0;border-radius:6px;background:repeating-linear-gradient(var(--surface) 0 calc(var(--h) - 1px),var(--line) calc(var(--h) - 1px) var(--h))}
 .ev{position:absolute;border:none;border-radius:6px;padding:4px 6px;font-size:12px;font-weight:600;text-align:left;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;line-height:1.25;z-index:1}
 .ev small{font-weight:400;font-size:11px;opacity:.85;white-space:nowrap}
+.ev small.team{font-weight:600;opacity:1}
 .ev:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .ev.single{outline:1.5px dashed currentColor;outline-offset:-2px}
 .ev.multi{background:var(--bg);border:1px solid var(--strong);color:var(--ink);padding:3px;gap:1px}
@@ -125,9 +126,9 @@ const CONFIG = {
 
   startHour: 8,         // frühester Zeitpunkt im Raster
   endHour: 22,          // spätester Zeitpunkt im Raster
-  defaultHour: 16,      // hier startet die Ansicht
-  visibleHours: 4,      // sichtbarer Bereich ohne Scrollen (16–20)
-  hourPx: 60,
+  // Der ganze Zeitraum ist immer sichtbar (kein Scrollen im Raster).
+  hourPxMobile: 44,     // Höhe einer Stunde auf dem Handy
+  hourPxDesktop: 52,    // Höhe einer Stunde ab 600 px Breite
 
   // Termin-Titel beginnt mit dem Kürzel, z. B. "U17 (W)" oder "U17 (W) Training".
   // short = Beschriftung im Raster.
@@ -281,14 +282,18 @@ async function loadWeek(mon){
 }
 
 /* ---------- Aufbau ---------- */
-const H = CONFIG.hourPx, S = CONFIG.startHour, E = CONFIG.endHour, HEAD = 46;
+const S = CONFIG.startHour, E = CONFIG.endHour, HEAD = 46;
+let H = CONFIG.hourPxMobile;
 const vp = $("vp"), carea = $("carea"), harea = $("harea");
-vp.style.height = HEAD + CONFIG.visibleHours*H + 2 + "px";
 $("corner").style.height = HEAD + "px";
-$("times").style.height = carea.style.height = (E-S)*H + "px";
 harea.style.height = HEAD + "px";
-carea.style.setProperty("--h", H+"px");
-for (let h=S; h<E; h++){ const s=document.createElement("span"); s.style.top=(h-S)*H+"px"; s.textContent=h; $("times").appendChild(s); }
+function setHours(){
+  vp.style.height = HEAD + (E-S)*H + 8 + "px";
+  $("times").style.height = carea.style.height = (E-S)*H + "px";
+  carea.style.setProperty("--h", H+"px");
+  $("times").innerHTML = "";
+  for (let h=S; h<E; h++){ const s=document.createElement("span"); s.style.top=(h-S)*H+"px"; s.textContent=h; $("times").appendChild(s); }
+}
 
 // Spaltenbreite so wählen, dass die erste Fläche (Platz) immer ganz zu sehen ist
 let lastW = 0;
@@ -296,6 +301,8 @@ function layout(){
   const w = vp.clientWidth; if (!w || w === lastW) return false;
   lastW = w;
   TW = w < 400 ? 24 : 30;
+  H = w >= 600 ? CONFIG.hourPxDesktop : CONFIG.hourPxMobile;
+  setHours();
   const first = CONFIG.areas[0];
   const n = first.quarters || (first.columns || []).length || 1;
   const fit = Math.floor((w - TW - (n-1)*GAP - 6) / n);
@@ -348,6 +355,7 @@ function updateJumps(){
   jumpBtns.forEach((b,i) => { b.classList.toggle("on", i===cur); b.setAttribute("aria-pressed", i===cur); });
   const fits = vp.scrollWidth <= vp.clientWidth + 2;
   $("jumps").style.display = fits ? "none" : "flex";
+  $("hint").textContent = fits ? "Termin antippen für Details" : "Wischen ↔ für Boxen und Weiden · Termin antippen für Details";
 }
 vp.addEventListener("scroll", updateJumps, { passive:true });
 let rt = 0;
@@ -475,11 +483,18 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b){
   place(btn, c0, c1, a, b, lane, lanes);
   btn.style.background = t.bg; btn.style.color = t.fg;
   const wide = (c1 > c0 && lanes === 1);
-  btn.setAttribute("aria-label", t.name+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
-  btn.append(wide ? t.name : t.short);
-  if (showTime && (b-a) >= 0.75){
+  // Teamteil aus dem Titel, z. B. "IDEAL U13 Heimspiel – …" -> "IDEAL U13"
+  const head = (e.title||"").split(/\s+–\s+|\s+(?=(Heimspiel|Kinderfestival|Training|Testspiel|Spiel)\b)/i)[0].trim();
+  const extra = norm(head).startsWith(norm(t.key)) && norm(head).length > norm(t.key).length ? head.slice(t.key.length).trim() : "";
+  btn.setAttribute("aria-label", (extra ? t.key+" "+extra : t.name)+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
+  btn.append(wide ? (extra ? t.key + " " + extra : t.name) : t.short);
+  if (!wide && extra){ const x=document.createElement("small"); x.className="team"; x.textContent=extra; btn.appendChild(x); }
+  const px = (b-a)*H - 4 - (!wide && extra ? 14 : 0);
+  if (showTime && px >= 34){
     const bw = (COLS[c1].x + CW - COLS[c0].x) / lanes;
-    if (!wide && bw < 76 && (b-a) >= 1){
+    if (!wide && bw < 76 && px < 52){
+      const s=document.createElement("small"); s.textContent = hm(e.start); btn.appendChild(s);
+    } else if (!wide && bw < 76){
       // schmaler Block: Zeit in zwei Zeilen
       const s1=document.createElement("small"); s1.textContent = hm(e.start)+"–";
       const s2=document.createElement("small"); s2.textContent = hm(e.end);
@@ -570,7 +585,7 @@ $("prev").onclick = () => { selected = addDays(selected,-7); render(); };
 $("next").onclick = () => { selected = addDays(selected, 7); render(); };
 
 layout();
-render().then(() => { vp.scrollTop = (CONFIG.defaultHour - S) * H; updateJumps(); });
+render().then(updateJumps);
 setInterval(() => { if (sameDay(new Date(), selected)) render(); }, 5*60*1000);
 </script>
 </body>
