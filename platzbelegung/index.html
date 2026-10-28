@@ -28,6 +28,7 @@ h1{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
 button{font:inherit;color:inherit;cursor:pointer}
 .weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .weeknav span{font-size:14px;font-weight:600}
+.weeknav .kw{font-weight:400}
 .iconbtn{width:44px;height:44px;border:none;background:transparent;border-radius:10px;font-size:22px;line-height:1}
 .iconbtn:hover{background:var(--surface)}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
@@ -426,7 +427,9 @@ async function render(){
   const mon = monday(selected);
   const today = startOfDay(new Date());
   const sun = addDays(mon,6);
-  $("weeklabel").textContent = dm(mon) + " – " + dm(sun) + sun.getFullYear() + " (KW " + kw(mon) + ")";
+  $("weeklabel").textContent = dm(mon) + " – " + dm(sun) + sun.getFullYear() + " ";
+  const kwEl = document.createElement("span"); kwEl.className = "kw"; kwEl.textContent = "(KW " + kw(mon) + ")";
+  $("weeklabel").appendChild(kwEl);
 
   const days = $("days"); days.innerHTML = "";
   for (let d=0; d<7; d++){
