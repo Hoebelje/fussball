@@ -78,9 +78,9 @@ function render(){
         let cls=home?"home":"away";
         if(past)cls+=" past";
         if(!past&&!nextMarked){cls+=" next";nextMarked=true}
-        const team=n=>isUs(n)?`<span class="us">${n}</span>`:n;
+        const gegner=home?g.gast:g.heim;
         items+=`<li class="${cls}"><span class="we">${label}</span>
-          <span class="match">${team(g.heim)} – ${team(g.gast)}</span>
+          <span class="match">${gegner}</span>
           <span class="meta"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${g.zeit} Uhr`:""} · ${g.wettbewerb||""}${g.ort?` · ${g.ort}`:""}</span></li>`;
       }
       if(!items)continue;

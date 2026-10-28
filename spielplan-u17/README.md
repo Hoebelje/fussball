@@ -19,7 +19,7 @@ Alle Termine stehen in **`spiele.json`**. Die Seite selbst (`index.html`) musst 
 ```
 
 - `datum` immer als JJJJ-MM-TT schreiben.
-- Steht „Agrippina“ bei `heim`, wird das Spiel grün als Heimspiel markiert.
+- Steht „Agrippina“ bei `heim`, wird das Spiel grün als Heimspiel markiert. Angezeigt wird nur der Gegner.
 - Optional: `"ort": "Sportplatz XY"` für einen abweichenden Spielort.
 - Zwischen zwei Spielen steht ein Komma, nach dem letzten Spiel nicht.
 
