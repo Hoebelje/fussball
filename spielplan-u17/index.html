@@ -38,6 +38,15 @@ li.next{box-shadow:0 0 0 2px var(--accent)}
 .meta{font-size:12px;color:var(--muted)}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;margin-right:6px;background:var(--surface);color:var(--accent)}
 li.home .tag{background:#fff;color:var(--homeline)}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;margin-left:6px;vertical-align:2px;text-decoration:none}
+.pill.red{background:#C5221F;color:#fff}
+.pill.amber{background:#B06000;color:#fff}
+li.cancel{background:#fff;border-color:#F2C4C2;border-left:4px solid #C5221F}
+li.cancel .o{text-decoration:line-through;color:var(--faint)}
+li.cancel .tag{background:#F3F4F7;color:var(--faint)}
+.hinweis{grid-column:2;margin-top:6px;font-size:12px;font-weight:600;padding:5px 8px;border-radius:6px;background:#FEF3E0;color:#B06000;line-height:1.4}
+.hinweis .am{font-weight:400}
+li.home .hinweis{background:#FFF7EA}
 .note{margin-top:20px;font-size:12px;color:var(--faint);line-height:1.5}
 .err{padding:12px;border:1px solid #f0c98a;background:#fff4e0;border-radius:10px;font-size:13px}
 /* Bearbeiten */
@@ -121,68 +130,117 @@ const speicher={
 let sessionPw="";
 
 /* ---------- Anzeige ---------- */
+const istAbgesetzt=g=>!!(g.spielnr&&g.status==="abgesetzt");
+let ersterAufbau=true;
+
 function render(){
   const byDate={};
   data.spiele.forEach((s,i)=>{(byDate[s.datum]=byDate[s.datum]||[]).push({s,i})});
+  const today=iso(new Date());
+
+  // Zeilen: alle Wochenenden im Saisonzeitraum + einzelne Spieltage unter der Woche
+  const slots=[];
   let sat=parse(data.von);while(sat.getDay()!==6)sat.setDate(sat.getDate()+1);
-  const end=parse(data.bis), today=iso(new Date());
-  let html="",month=-1,nextMarked=false;
-
-  // Formular für neues Spiel ganz oben
-  if(editMode&&offen&&offen.typ==="neu"&&!offen.datum) html+=`<ul>${formHtml(null,"")}</ul>`;
-
-  // Spiele außerhalb des Saisonzeitraums im Bearbeiten-Modus trotzdem zeigen
-  const inRange=new Set();
+  const end=parse(data.bis);
   for(;sat<=end;sat.setDate(sat.getDate()+7)){
     const sun=new Date(sat);sun.setDate(sun.getDate()+1);
-    inRange.add(iso(sat));inRange.add(iso(sun));
-    const games=[...(byDate[iso(sat)]||[]),...(byDate[iso(sun)]||[])];
-    const past=iso(sun)<today;
-    const label=(sat.getMonth()===sun.getMonth()?`${pad(sat.getDate())}.`:dm(sat))+`/${dm(sun)}`;
+    slots.push({start:iso(sat),ende:iso(sun),tage:[iso(sat),iso(sun)],frei:iso(sat),monat:new Date(sat),
+      label:(sat.getMonth()===sun.getMonth()?`${pad(sat.getDate())}.`:dm(sat))+`/${dm(sun)}`});
+  }
+  const inRange=new Set(slots.flatMap(s=>s.tage));
+  for(const d of Object.keys(byDate)){
+    if(inRange.has(d)||d<data.von||d>data.bis)continue;
+    const dt=parse(d);
+    slots.push({start:d,ende:d,tage:[d],monat:dt,label:`${TAGE[dt.getDay()]} ${dm(dt)}`});
+    inRange.add(d);
+  }
+  slots.sort((a,b)=>a.start.localeCompare(b.start));
+
+  let html="",month=-1,nextMarked=false,jetztMarked=false;
+  if(editMode&&offen&&offen.typ==="neu"&&!offen.datum) html+=`<ul>${formHtml(null,"")}</ul>`;
+
+  for(const slot of slots){
+    const games=slot.tage.flatMap(t=>byDate[t]||[]);
+    const past=slot.ende<today;
+    const jetzt=!past&&!jetztMarked;
     let items="";
     if(!games.length){
-      if(filter!=="alle"&&!(editMode&&offen&&offen.datum===iso(sat)))continue;
-      if(editMode&&offen&&offen.typ==="neu"&&offen.datum===iso(sat)) items=formHtml(null,iso(sat));
-      else items=`<li class="item free${past?" past":""}" data-frei="${iso(sat)}"><span class="we">${label}</span><span class="match">spielfrei</span></li>`;
+      if(!slot.frei)continue;
+      if(filter!=="alle"&&!(editMode&&offen&&offen.datum===slot.frei))continue;
+      if(editMode&&offen&&offen.typ==="neu"&&offen.datum===slot.frei) items=formHtml(null,slot.frei);
+      else items=`<li class="item free${past?" past":""}" data-frei="${slot.frei}"><span class="we">${slot.label}</span><span class="match">spielfrei</span></li>`;
     }else{
       for(const {s:g,i} of games){
-        const home=isUs(g.heim);
+        const home=isUs(g.heim), ab=istAbgesetzt(g);
+        if(filter!=="alle"&&ab)continue;
         if(filter==="heim"&&!home)continue;
         if(editMode&&offen&&offen.typ==="spiel"&&offen.idx===i){items+=formHtml(g,g.datum,i);continue}
         let cls="item "+(home?"home":"away");
+        if(ab)cls+=" cancel";
         if(past)cls+=" past";
-        if(!past&&!nextMarked){cls+=" next";nextMarked=true}
-        items+=spielHtml(g,i,label,cls);
+        if(!past&&!ab&&!nextMarked){cls+=" next";nextMarked=true}
+        items+=spielHtml(g,i,slot.label,cls);
       }
       if(!items)continue;
     }
-    const m=sat.getMonth()+sat.getFullYear()*12;
-    if(m!==month){html+=(month===-1?"":"</ul>")+`<h2>${MONATE[sat.getMonth()]} ${sat.getFullYear()}</h2><ul>`;month=m}
+    if(jetzt){items=items.replace(/^<li /,'<li data-jetzt="1" ');jetztMarked=true}
+    const m=slot.monat.getMonth()+slot.monat.getFullYear()*12;
+    if(m!==month){html+=(month===-1?"":"</ul>")+`<h2>${MONATE[slot.monat.getMonth()]} ${slot.monat.getFullYear()}</h2><ul>`;month=m}
     html+=items;
   }
   if(month!==-1)html+="</ul>";
 
   if(editMode){
-    // Spiele unter der Woche oder außerhalb des Zeitraums
     const rest=data.spiele.map((s,i)=>({s,i})).filter(({s})=>!inRange.has(s.datum));
     if(rest.length){
-      html+=`<h2>Weitere Termine</h2><p class="hint">Diese Spiele liegen nicht an einem Wochenende im Saisonzeitraum und werden Besuchern nicht angezeigt.</p><ul>`;
+      html+=`<h2>Weitere Termine</h2><p class="hint">Diese Spiele liegen außerhalb des Saisonzeitraums (von/bis) und werden Besuchern nicht angezeigt.</p><ul>`;
       for(const {s:g,i} of rest){
         if(offen&&offen.typ==="spiel"&&offen.idx===i)html+=formHtml(g,g.datum,i);
-        else html+=spielHtml(g,i,dm(parse(g.datum))+String(parse(g.datum).getFullYear()).slice(2),"item "+(isUs(g.heim)?"home":"away"));
+        else html+=spielHtml(g,i,dm(parse(g.datum))+String(parse(g.datum).getFullYear()).slice(2),"item "+(isUs(g.heim)?"home":"away")+(istAbgesetzt(g)?" cancel":""));
       }
       html+="</ul>";
     }
   }
   $("list").innerHTML=html||"<p class='sub'>Keine Einträge.</p>";
   if(editMode&&offen){const f=document.querySelector("form.edit");if(f){f.scrollIntoView({block:"nearest"});}}
+  if(ersterAufbau){ersterAufbau=false;zumAktuellenDatum()}
+}
+
+/* Beim Start zum aktuellen bzw. nächsten Wochenende scrollen (nur innerhalb dieser Seite) */
+function zumAktuellenDatum(){
+  const el=document.querySelector("[data-jetzt]");
+  if(!el)return;
+  let ziel=el;
+  const ul=el.parentElement;
+  if(ul&&ul.firstElementChild===el&&ul.previousElementSibling&&ul.previousElementSibling.tagName==="H2")ziel=ul.previousElementSibling;
+  if(ziel===document.querySelector("#list h2"))return; // aktuelles Wochenende ist ohnehin das erste
+  const top=ziel.getBoundingClientRect().top+window.scrollY-8;
+  if(top>40)window.scrollTo(0,top);
+}
+
+function aenderungsText(g){
+  const v=g.vorher||{}, teile=[];
+  if(v.datum){const d=parse(v.datum);teile.push(`Verlegt – vorher ${TAGE[d.getDay()]} ${dm(d)}`)}
+  if("zeit" in v){
+    if(!g.zeit)teile.push(`Anstoßzeit offen – vorher ${esc(v.zeit)} Uhr`);
+    else if(!v.zeit)teile.push(`Anstoßzeit festgelegt`);
+    else teile.push(`Neue Anstoßzeit – vorher ${esc(v.zeit)} Uhr`);
+  }
+  if(v.heimrecht)teile.push(`Heimrecht getauscht – vorher ${v.heimrecht==="heim"?"Heimspiel":"Auswärtsspiel"}`);
+  if(!teile.length)return "";
+  const am=g.geaendert?` <span class="am">(geändert am ${dm(parse(g.geaendert))})</span>`:"";
+  return teile.join(" · ")+am;
 }
 
 function spielHtml(g,i,label,cls){
   const home=isUs(g.heim), d=parse(g.datum), gegner=home?g.gast:g.heim;
+  const ab=istAbgesetzt(g);
+  const aend=(!ab&&g.spielnr)?aenderungsText(g):"";
+  const pille=ab?`<span class="pill red">Abgesetzt</span>`:aend?`<span class="pill amber">${g.vorher&&g.vorher.datum?"Verlegt":"Geändert"}</span>`:"";
   return `<li class="${cls}" data-idx="${i}"><span class="we">${esc(label)}</span>
-    <span class="match">${esc(gegner)}</span>
-    <span class="meta"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${esc(g.zeit)} Uhr`:""}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></li>`;
+    <span class="match"><span class="o">${esc(gegner)}</span>${pille}</span>
+    <span class="meta"><span class="o"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${esc(g.zeit)} Uhr`:""}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></span>${aend?`
+    <span class="hinweis">${aend}</span>`:""}</li>`;
 }
 
 /* ---------- Formular ---------- */

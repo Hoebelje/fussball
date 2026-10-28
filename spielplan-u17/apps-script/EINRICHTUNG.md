@@ -79,6 +79,11 @@ Das Script holt jede Nacht gegen 4 Uhr den Spielplan von fussball.de und aktuali
 Wenn der Abgleich einmal nicht funktioniert (z. B. weil fussball.de seine Seite umbaut), bekommst du eine E-Mail.
 Die Seite zeigt dann weiter den letzten Stand.
 
+**Änderungen und Absagen:** Verlegt fussball.de ein Spiel oder ändert die Anstoßzeit bzw. das Heimrecht, bekommt das Spiel
+auf der Seite eine Pille „Verlegt“/„Geändert“ und einen Hinweis mit dem vorherigen Wert. Abgesetzte Spiele bleiben
+durchgestrichen mit roter Pille „Abgesetzt“ stehen – auch wenn sie auf fussball.de ganz verschwinden.
+Eigene Termine bekommen nie solche Markierungen.
+
 **Offizielle Spiele** (alle, die auf fussball.de stehen) werden beim Abgleich immer auf den fussball.de-Stand gesetzt.
 Änderungen an ihnen im Bearbeiten-Modus halten also nur bis zur nächsten Nacht. Eigene Termine an einem Tag,
 an dem fussball.de ein offizielles Spiel führt, werden durch das offizielle Spiel ersetzt.

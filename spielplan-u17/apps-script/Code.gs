@@ -65,7 +65,10 @@ function doPost(e) {
       }
       if (req.aktion === 'aendern') {
         const neu = pruefen(req.spiel);
-        if (spiele[i].spielnr) neu.spielnr = spiele[i].spielnr; // offizielles Spiel bleibt als solches markiert
+        // offizielles Spiel bleibt als solches markiert, inkl. Abgleich-Infos
+        ['spielnr', 'fbde', 'vorher', 'geaendert', 'status'].forEach(k => {
+          if (spiele[i][k] !== undefined) neu[k] = spiele[i][k];
+        });
         spiele[i] = neu;
         nachricht = `Spielplan U17: Spiel am ${spiele[i].datum} geändert`;
       } else {
@@ -182,9 +185,11 @@ function abgleichEinrichten() {
 }
 
 /**
- * Holt den Mannschaftsspielplan von fussball.de und ersetzt damit die offiziellen Spiele
- * (Einträge mit "spielnr"). Selbst eingetragene Termine ohne "spielnr" bleiben erhalten,
- * außer an einem Tag, an dem fussball.de ein offizielles Spiel führt.
+ * Holt den Mannschaftsspielplan von fussball.de und aktualisiert damit die offiziellen Spiele
+ * (Einträge mit "spielnr"). Änderungen an Datum, Anstoßzeit oder Heimrecht werden in "vorher"
+ * festgehalten, abgesetzte oder von fussball.de verschwundene Spiele bekommen "status": "abgesetzt".
+ * Selbst eingetragene Termine ohne "spielnr" bleiben erhalten, außer an einem Tag, an dem
+ * fussball.de ein (nicht abgesetztes) offizielles Spiel führt.
  */
 function abgleichFussballDe() {
   const props = PropertiesService.getScriptProperties();
@@ -201,10 +206,9 @@ function abgleichFussballDe() {
       throw new Error('Auf fussball.de wurden keine Spiele gefunden. Möglicherweise hat fussball.de die Seite umgebaut. Der Spielplan wurde nicht verändert.');
     }
 
-    const offizielleTage = new Set(offiziell.map(s => s.datum));
-    const eigene = (daten.spiele || []).filter(s => !s.spielnr && !offizielleTage.has(s.datum));
-    const neueSpiele = eigene.concat(offiziell)
-      .sort((a, b) => (a.datum + (a.zeit || '')).localeCompare(b.datum + (b.zeit || '')));
+    const heute = Utilities.formatDate(new Date(), 'Europe/Berlin', 'yyyy-MM-dd');
+    const neueSpiele = zusammenfuehren(daten.spiele || [], offiziell, heute);
+    const eigene = neueSpiele.filter(s => !s.spielnr);
 
     const vorher = formatieren(Object.assign({}, daten, { stand: '' }));
     daten.spiele = neueSpiele;
@@ -232,6 +236,59 @@ function abgleichFussballDe() {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Führt den bisherigen Spielplan mit den frisch gelesenen fussball.de-Spielen zusammen.
+ *  - alte:     bisherige Einträge aus spiele.json
+ *  - frisch:   Ergebnis von spielplanParsen (inkl. abgesetzter Spiele mit abgesetzt: true)
+ *  - heute:    'yyyy-MM-dd', wird als Änderungsdatum eingetragen
+ * Pro offiziellem Spiel wird in "fbde" der letzte fussball.de-Stand gemerkt. Verglichen wird immer
+ * mit diesem Stand, damit Änderungen im Bearbeiten-Modus nicht als fussball.de-Änderung zählen.
+ */
+function zusammenfuehren(alte, frisch, heute) {
+  const istHeim = s => /agrippina/i.test(s.heim || '');
+  const bisher = {};
+  alte.filter(s => s.spielnr).forEach(s => { bisher[s.spielnr] = s; });
+
+  const offiziell = frisch.map(f => {
+    const a = bisher[f.spielnr];
+    delete bisher[f.spielnr];
+    const neu = { datum: f.datum, zeit: f.zeit, heim: f.heim, gast: f.gast, wettbewerb: f.wettbewerb, spielnr: f.spielnr };
+    if (a && a.ort) neu.ort = a.ort;
+
+    if (a) {
+      const alt = a.fbde || { datum: a.datum, zeit: a.zeit || '', heim: istHeim(a) }; // letzter fussball.de-Stand
+      const vorher = Object.assign({}, a.vorher || {});
+      const vergleich = [
+        ['datum', alt.datum, f.datum],
+        ['zeit', alt.zeit || '', f.zeit || ''],
+        ['heimrecht', alt.heim ? 'heim' : 'auswaerts', istHeim(f) ? 'heim' : 'auswaerts']
+      ];
+      vergleich.forEach(([feld, war, ist]) => {
+        if (war !== ist && !(feld in vorher)) vorher[feld] = war;   // ursprünglichen Wert festhalten
+        if (feld in vorher && vorher[feld] === ist) delete vorher[feld]; // wieder wie ursprünglich
+      });
+      if (Object.keys(vorher).length) {
+        neu.vorher = vorher;
+        const gleichWieVorher = JSON.stringify(vorher) === JSON.stringify(a.vorher || {});
+        const fbdeGeaendert = alt.datum !== f.datum || (alt.zeit || '') !== (f.zeit || '') || !!alt.heim !== istHeim(f);
+        neu.geaendert = (gleichWieVorher && !fbdeGeaendert && a.geaendert) ? a.geaendert : heute;
+      }
+    }
+    if (f.abgesetzt) neu.status = 'abgesetzt';
+    neu.fbde = { datum: f.datum, zeit: f.zeit || '', heim: istHeim(f) };
+    return neu;
+  });
+
+  // Offizielle Spiele, die es auf fussball.de nicht mehr gibt, bleiben als "abgesetzt" stehen
+  const verschwunden = Object.keys(bisher).map(nr => Object.assign({}, bisher[nr], { status: 'abgesetzt' }));
+
+  const offizielleTage = new Set(offiziell.filter(s => s.status !== 'abgesetzt').map(s => s.datum));
+  const eigene = alte.filter(s => !s.spielnr && !offizielleTage.has(s.datum));
+
+  return eigene.concat(offiziell, verschwunden)
+    .sort((a, b) => (a.datum + (a.zeit || '')).localeCompare(b.datum + (b.zeit || '')));
 }
 
 /** Lädt den Spielplan einer Mannschaft von fussball.de und wandelt ihn in Spiel-Einträge um. */
@@ -274,7 +331,7 @@ function spielplanParsen(html, verein) {
 
     const nr = (block.match(/\b[A-Z]{2,3}\s*\|\s*(\d{5,})/) || [])[1];
     const score = ohneTags((block.match(/<td class="column-score">([\s\S]*?)<\/td>/) || [])[1] || '');
-    if (/Absetzung|Ausfall|Annul/i.test(score)) continue; // abgesetzte Spiele nicht übernehmen
+    const abgesetzt = /Absetzung|Ausfall|Annul/i.test(score);
 
     const spiel = {
       datum: d[3] + '-' + d[2] + '-' + d[1],
@@ -285,6 +342,7 @@ function spielplanParsen(html, verein) {
     };
     if (!/agrippina/i.test(spiel.heim + spiel.gast)) continue;
     spiel.spielnr = nr || ('fbde-' + spiel.datum);
+    if (abgesetzt) spiel.abgesetzt = true;
     spiele.push(spiel);
   }
   return spiele;
@@ -295,5 +353,5 @@ function testFussballDe() {
   const daten = JSON.parse(lesen(PropertiesService.getScriptProperties()).inhalt);
   const spiele = fussballDeSpiele(daten.fussballde_team_id || FUSSBALLDE_TEAM_ID, daten.von, daten.bis, daten.verein);
   Logger.log(spiele.length + ' Spiele auf fussball.de gefunden:');
-  spiele.forEach(s => Logger.log(s.datum + ' ' + s.zeit + '  ' + s.heim + ' – ' + s.gast + '  (' + s.wettbewerb + ')'));
+  spiele.forEach(s => Logger.log(s.datum + ' ' + s.zeit + '  ' + s.heim + ' – ' + s.gast + '  (' + s.wettbewerb + ')' + (s.abgesetzt ? '  ABGESETZT' : '')));
 }
