@@ -64,6 +64,7 @@ form.edit input:focus,form.edit select:focus,.panel input:focus{outline:2px soli
 .actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
 .actions .spacer{flex:1}
 .msg{grid-column:1/-1;font-size:13px;margin:0}
+.offiziell{margin:0;padding:8px 10px;border-radius:8px;background:#fff4e0;border:1px solid #f0c98a;color:#6b3d00;font-size:12px;line-height:1.4}
 .msg.bad{color:var(--danger)}
 .toast{position:sticky;bottom:12px;margin-top:12px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;display:none}
 .toast.show{display:block}
@@ -188,6 +189,7 @@ function spielHtml(g,i,label,cls){
 function formHtml(g,datum,idx){
   const neu=!g, home=g?isUs(g.heim):true, gegner=g?(home?g.gast:g.heim):"";
   return `<li class="formrow"><form class="edit" data-idx="${idx==null?"":idx}" novalidate>
+    ${g&&g.spielnr?`<p class="offiziell full">Offizielles Spiel von fussball.de. Es wird jede Nacht automatisch abgeglichen, eigene Änderungen werden dabei wieder überschrieben.</p>`:""}
     <label>Datum<input type="date" name="datum" value="${esc(datum)}" required></label>
     <label>Anstoß<input type="time" name="zeit" value="${esc(g?g.zeit:"")}"></label>
     <div class="full"><label>Spielort</label>

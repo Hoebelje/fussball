@@ -62,6 +62,27 @@ In [`spielplan-u17/spiele.json`](https://github.com/Hoebelje/fussball/edit/main/
 
 Speichern (Commit changes). Nach 1–2 Minuten erscheint oben rechts auf dem Spielplan der Button **Bearbeiten**.
 
+## Schritt 7: Täglichen Abgleich mit fussball.de einschalten
+
+Das Script holt jede Nacht gegen 4 Uhr den Spielplan von fussball.de und aktualisiert die offiziellen Spiele
+(verlegte Termine, neue Anstoßzeiten, abgesetzte Spiele). Selbst eingetragene Termine wie Turniere bleiben erhalten.
+
+1. Im Editor oben die Funktion **`testFussballDe`** auswählen → **Ausführen**.
+   Im Protokoll erscheint die Liste der Spiele, die fussball.de liefert. Es wird noch nichts gespeichert.
+2. Funktion **`abgleichFussballDe`** auswählen → **Ausführen**.
+   Google fragt einmal nach zusätzlichen Berechtigungen (E-Mail senden, zeitgesteuert ausführen) → zulassen.
+   Im Protokoll steht danach „Abgleich: Spielplan aktualisiert …“.
+3. Funktion **`abgleichEinrichten`** auswählen → **Ausführen**.
+   Damit läuft der Abgleich ab jetzt jede Nacht automatisch. Kontrolle: links auf den Wecker **Trigger** klicken,
+   dort steht `abgleichFussballDe` – „Tagestimer“.
+
+Wenn der Abgleich einmal nicht funktioniert (z. B. weil fussball.de seine Seite umbaut), bekommst du eine E-Mail.
+Die Seite zeigt dann weiter den letzten Stand.
+
+**Offizielle Spiele** (alle, die auf fussball.de stehen) werden beim Abgleich immer auf den fussball.de-Stand gesetzt.
+Änderungen an ihnen im Bearbeiten-Modus halten also nur bis zur nächsten Nacht. Eigene Termine an einem Tag,
+an dem fussball.de ein offizielles Spiel führt, werden durch das offizielle Spiel ersetzt.
+
 ---
 
 ## Später
@@ -72,6 +93,11 @@ Gilt sofort. Wer das alte Passwort gespeichert hat, wird beim nächsten Speicher
 **GitHub-Schlüssel abgelaufen** (Speichern meldet „GitHub-Lesen: 401“): Schritt 1 wiederholen und den neuen Schlüssel bei `GITHUB_TOKEN` eintragen.
 
 **Neue Version von Code.gs einspielen:** Code im Editor ersetzen und speichern → **Bereitstellen** → **Bereitstellungen verwalten** → Stift → Version: **Neue Version** → **Bereitstellen**. Die URL bleibt gleich.
+
+**Abgleich abschalten:** Apps Script → Trigger (Wecker-Symbol) → beim Eintrag `abgleichFussballDe` über das Menü ⋮ löschen.
+
+**Neue Saison:** In `spiele.json` `von` und `bis` auf die neue Saison setzen. Die Mannschafts-ID auf fussball.de bleibt in der Regel gleich.
+Falls nicht, kann sie in `spiele.json` als `"fussballde_team_id": "…"` eingetragen werden (steht in der Adresse der Mannschaftsseite nach `team-id/`).
 
 **Bearbeiten-Button wieder ausblenden:** in `spiele.json` `"bearbeiten_api": ""` setzen.
 
