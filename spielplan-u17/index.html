@@ -81,6 +81,20 @@ form.edit input:focus,form.edit select:focus,.panel input:focus{outline:2px soli
 .login{display:flex;gap:8px;flex-wrap:wrap}
 .login input{flex:1;min-width:160px;height:38px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:15px;background:#fff}
 @media (max-width:420px){form.edit{grid-template-columns:1fr}}
+.kurz{display:none}
+@media (max-width:420px){
+  .app{padding:12px 12px 20px}
+  h1{font-size:20px}
+  .lang{display:none}
+  .kurz{display:inline}
+  .sub{margin-bottom:10px}
+  .editbtn:not(.on){width:36px;padding:0;justify-content:center}
+  .editbtn:not(.on) span{display:none}
+  .filter{gap:5px;flex-wrap:nowrap}
+  .filter button{height:32px;padding:0 11px;font-size:12px;white-space:nowrap}
+  li.item{grid-template-columns:78px 1fr;gap:2px 8px}
+}
+
 </style>
 </head>
 <body>
@@ -90,7 +104,7 @@ form.edit input:focus,form.edit select:focus,.panel input:focus{outline:2px soli
       <h1 id="title">Spielplan</h1>
       <p class="sub" id="sub"></p>
     </div>
-    <button class="editbtn" id="editbtn" type="button" aria-pressed="false">
+    <button class="editbtn" id="editbtn" type="button" aria-pressed="false" aria-label="Bearbeiten">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z"/></svg>
       <span>Bearbeiten</span>
     </button>
@@ -99,7 +113,7 @@ form.edit input:focus,form.edit select:focus,.panel input:focus{outline:2px soli
   <div id="editpanel"></div>
 
   <div class="filter" role="group" aria-label="Filter">
-    <button data-f="alle" class="on">Alle Wochenenden</button>
+    <button data-f="alle" class="on">Alle<span class="lang"> Wochenenden</span></button>
     <button data-f="spiele">Nur Spiele</button>
     <button data-f="heim">Nur Heimspiele</button>
   </div>
@@ -270,7 +284,7 @@ function setEdit(on){
   editMode=on;offen=null;
   $("app").classList.toggle("editing",on);
   const b=$("editbtn");b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);
-  b.querySelector("span").textContent=on?"Fertig":"Bearbeiten";
+  b.querySelector("span").textContent=on?"Fertig":"Bearbeiten";b.setAttribute("aria-label",on?"Fertig":"Bearbeiten");
   renderPanel();render();
 }
 
@@ -362,8 +376,9 @@ document.querySelectorAll(".filter button").forEach(b=>b.onclick=()=>{
 });
 
 function updateTexte(){
-  $("title").textContent=`Spielplan ${data.team}`;
-  $("sub").textContent=`${data.verein} · Saison bis ${dm(parse(data.bis))}${parse(data.bis).getFullYear()}`;
+  const kurz=(String(data.team).match(/\((U\d+)\)/)||[])[1]||data.team;
+  $("title").innerHTML=`<span class="lang">Spielplan ${esc(data.team)}</span><span class="kurz">Spielplan ${esc(kurz)}</span>`;
+  $("sub").innerHTML=`<span class="lang">${esc(data.verein)} · </span>Saison bis ${dm(parse(data.bis))}${parse(data.bis).getFullYear()}`;
   $("note").textContent=`Heimspiele: ${data.heimspielort}. Stand: ${data.stand}. Termine ohne Gewähr – maßgeblich ist fussball.de.`;
 }
 
