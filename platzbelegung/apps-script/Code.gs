@@ -38,6 +38,7 @@ const TAGE_VORAUS = 60;          // so weit in die Zukunft wird abgeglichen
 const VORLAUF_MIN = 0;           // Termin beginnt genau mit dem Anpfiff
 
 // Mannschaftsart auf fussball.de -> Teamkürzel (für SV Agrippina), Spieldauer in Minuten, Platzanteil
+// Spiele belegen mindestens 1/2 Platz (keine 1/4-Plätze bei Spielen).
 // Reihenfolge wichtig: das erste passende Muster gilt.
 const MANNSCHAFTEN = [
   // Spieldauer = offizielle Spielzeit + Halbzeitpause (ohne Verlängerung)
@@ -52,7 +53,7 @@ const MANNSCHAFTEN = [
   { muster: /B-Junior/i,            team: "",         dauer: 95,  ort: "" },
   { muster: /C-Junior/i,            team: "",         dauer: 85,  ort: "" },
   { muster: /D-Junior/i,            team: "",         dauer: 75,  ort: "1/2 Platz" },
-  { muster: /[FG]-Junior|Bambini/i, team: "",         dauer: 57,  ort: "1/4 Platz" }, // Festival 6×7 + 5×3 Pause
+  { muster: /[FG]-Junior|Bambini/i, team: "",         dauer: 57,  ort: "1/2 Platz" }, // Festival 6×7 + 5×3 Pause
   { muster: /E-Junior|Kinderfestival/i, team: "",     dauer: 63,  ort: "1/2 Platz" }, // Festival 6×8 + 5×3 Pause
   { muster: /.*/,                   team: "",         dauer: 105, ort: "" }
 ];
