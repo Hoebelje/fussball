@@ -50,9 +50,9 @@ const MANNSCHAFTEN = [
   { muster: /Herren/i,             team: "Herren 1", dauer: 105, ort: "" },
   { muster: /B-Junior/i,           team: "",        dauer: 95,  ort: "" },
   { muster: /C-Junior/i,           team: "",        dauer: 80,  ort: "" },
+  { muster: /[FG]-Junior|Bambini/i, team: "",       dauer: 120, ort: "1/4 Platz" },
   { muster: /Kinderfestival/i,     team: "",        dauer: 120, ort: "1/2 Platz" },
   { muster: /[DE]-Junior/i,        team: "",        dauer: 70,  ort: "1/2 Platz" },
-  { muster: /[FG]-Junior|Bambini/i, team: "",       dauer: 120, ort: "1/4 Platz" },
   { muster: /.*/,                  team: "",        dauer: 105, ort: "" }
 ];
 
