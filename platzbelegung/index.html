@@ -37,9 +37,14 @@ button{font:inherit;color:inherit;cursor:pointer}
 .day.today b{color:var(--accent)}
 .day.sel{background:var(--accent);border-color:var(--accent);color:#fff}
 .day.sel b{color:#fff}
-.jumps{display:flex;gap:6px;margin-bottom:8px}
-.jump{padding:0 14px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--bg);font-size:13px}
-.jump.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.board{position:relative}
+.fade{position:absolute;top:0;right:0;bottom:0;width:44px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),var(--bg) 90%);transition:opacity .2s;z-index:6}
+.dots{display:flex;align-items:center;justify-content:center;gap:4px;margin:8px 0 0}
+.dot{width:28px;height:28px;border:none;background:transparent;padding:0;display:inline-flex;align-items:center;justify-content:center}
+.dot i{display:block;width:8px;height:8px;border-radius:4px;background:#C9D5F0;transition:width .2s,background .2s}
+.dot.on i{width:20px;background:var(--accent)}
+.dots .lbl{font-size:12px;color:var(--muted);margin-left:4px;min-width:52px}
+.narrow .ev{font-size:11px}
 .allday{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .allday div{background:#fff4e0;color:#6b3d00;border:1px solid #f0c98a;border-radius:8px;padding:6px 10px;font-size:12px}
 .vp{overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -101,12 +106,15 @@ button{font:inherit;color:inherit;cursor:pointer}
     <button class="iconbtn" id="next" aria-label="Nächste Woche">›</button>
   </div>
   <div class="days" id="days"></div>
-  <div class="jumps" id="jumps"></div>
   <div class="allday" id="allday"></div>
-  <div class="vp" id="vp">
-    <div class="hrow"><div class="corner" id="corner"></div><div class="harea" id="harea"></div></div>
-    <div class="brow"><div class="times" id="times"></div><div class="carea" id="carea"></div></div>
+  <div class="board">
+    <div class="vp" id="vp">
+      <div class="hrow"><div class="corner" id="corner"></div><div class="harea" id="harea"></div></div>
+      <div class="brow"><div class="times" id="times"></div><div class="carea" id="carea"></div></div>
+    </div>
+    <div class="fade" id="fade"></div>
   </div>
+  <div class="dots" id="dots" aria-label="Flächen"></div>
   <p class="hint" id="hint">Wischen ↕ ↔ für mehr · Termin antippen für Details</p>
   <p class="legend">Volle Fläche = Serientermin · gestrichelt = Spiel oder Einzeltermin</p>
   <p class="status" id="status" role="status"></p>
@@ -344,9 +352,15 @@ function layout(){
   setHours();
   const first = CONFIG.areas[0];
   const n = first.quarters || (first.columns || []).length || 1;
-  const fit = Math.floor((w - TW - (n-1)*GAP - 6) / n);
-  CW = Math.max(MIN_CW, Math.min(CONFIG.colWidth, fit));
-  buildColumns();
+  // Passt alles nebeneinander (Desktop)? Sonst Platz ganz zeigen und die nächste Fläche rechts anschneiden.
+  CW = CONFIG.colWidth; buildColumns();
+  if (TW + CONTENT_W > w){
+    const PEEK = 30;
+    const fit = Math.floor((w - TW - (n-1)*GAP - AGAP - PEEK) / n);
+    CW = Math.max(MIN_CW, Math.min(CONFIG.colWidth, fit));
+    buildColumns();
+  }
+  document.body.classList.toggle("narrow", CW < 64);
   $("corner").style.width = $("times").style.width = TW + "px";
   vp.style.scrollPaddingLeft = TW + "px";
   harea.style.width = carea.style.width = CONTENT_W + "px";
@@ -378,12 +392,14 @@ function drawBackground(){
 }
 const nowLine = document.createElement("div"); nowLine.className = "now";
 
-// Sprung-Knöpfe zu den Flächen
+// Punkte unter dem Raster: zeigen die aktuelle Fläche, antippen springt dorthin
 const jumpBtns = CONFIG.areas.map((a, i) => {
-  const b = document.createElement("button"); b.className = "jump"; b.textContent = a.label;
+  const b = document.createElement("button"); b.className = "dot";
+  b.setAttribute("aria-label", a.label); b.innerHTML = "<i></i>";
   b.onclick = () => { picked = i; vp.scrollTo({ left: AREAS[i].x, behavior: "smooth" }); };
-  $("jumps").appendChild(b); return b;
+  $("dots").appendChild(b); return b;
 });
+const dotLabel = document.createElement("span"); dotLabel.className = "lbl"; $("dots").appendChild(dotLabel);
 let picked = null;
 vp.addEventListener("touchstart", () => { picked = null; }, { passive:true });
 vp.addEventListener("wheel", () => { picked = null; }, { passive:true });
@@ -392,9 +408,12 @@ function updateJumps(){
   let cur = 0; AREAS.forEach((a,i) => { if (x >= a.x) cur = i; });
   if (vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4) cur = picked ?? AREAS.length-1;
   jumpBtns.forEach((b,i) => { b.classList.toggle("on", i===cur); b.setAttribute("aria-pressed", i===cur); });
+  dotLabel.textContent = AREAS[cur] ? AREAS[cur].label : "";
   const fits = vp.scrollWidth <= vp.clientWidth + 2;
-  $("jumps").style.display = fits ? "none" : "flex";
-  $("hint").textContent = fits ? "Termin antippen für Details" : "Wischen ↔ für Boxen und Weiden · Termin antippen für Details";
+  const amEnde = vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4;
+  $("dots").style.display = fits ? "none" : "flex";
+  $("fade").style.opacity = (fits || amEnde) ? 0 : 1;
+  $("hint").textContent = fits ? "Termin antippen für Details" : "Wischen ↔ für weitere Flächen · Termin antippen für Details";
 }
 vp.addEventListener("scroll", updateJumps, { passive:true });
 let rt = 0;
