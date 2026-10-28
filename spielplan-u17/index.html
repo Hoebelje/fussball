@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spielplan U17</title>
+<style>
+:root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;--home:#E8F5EC;--homeline:#1E8E3E;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:680px;margin:0 auto;padding:16px 12px 24px}
+h1{margin:0 0 4px;font-size:22px;font-weight:700;color:var(--accent)}
+.sub{margin:0 0 14px;font-size:13px;color:var(--muted)}
+.filter{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.filter button{font:inherit;font-size:13px;height:34px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.filter button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+h2{margin:18px 0 6px;font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:92px 1fr;gap:2px 12px;align-items:start}
+li.home{background:var(--home);border-color:#BFE3C9;border-left:4px solid var(--homeline)}
+li.away{border-left:4px solid var(--accent)}
+li.free{background:#F7F8FB;color:var(--faint);border-style:dashed}
+li.past{opacity:.5}
+li.next{box-shadow:0 0 0 2px var(--accent)}
+.we{font-size:13px;font-weight:600;color:var(--muted);grid-row:span 2}
+.match{font-size:15px;font-weight:600;line-height:1.35}
+.match .us{color:var(--accent)}
+.meta{font-size:12px;color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;margin-right:6px;background:var(--surface);color:var(--accent)}
+li.home .tag{background:#fff;color:var(--homeline)}
+.note{margin-top:20px;font-size:12px;color:var(--faint);line-height:1.5}
+.err{padding:12px;border:1px solid #f0c98a;background:#fff4e0;border-radius:10px;font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1 id="title">Spielplan</h1>
+  <p class="sub" id="sub"></p>
+  <div class="filter" role="group" aria-label="Filter">
+    <button data-f="alle" class="on">Alle Wochenenden</button>
+    <button data-f="spiele">Nur Spiele</button>
+    <button data-f="heim">Nur Heimspiele</button>
+  </div>
+  <div id="list"></div>
+  <p class="note" id="note"></p>
+</div>
+<script>
+const MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const TAGE=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const dm=d=>`${pad(d.getDate())}.${pad(d.getMonth()+1)}.`;
+const parse=s=>{const[y,m,t]=s.split("-").map(Number);return new Date(y,m-1,t)};
+let data,filter="alle";
+
+function render(){
+  const isUs=n=>/agrippina/i.test(n);
+  const byDate={};
+  for(const s of data.spiele){(byDate[s.datum]=byDate[s.datum]||[]).push(s)}
+  // erster Samstag ab "von"
+  let sat=parse(data.von);while(sat.getDay()!==6)sat.setDate(sat.getDate()+1);
+  const end=parse(data.bis), today=iso(new Date());
+  let html="",month=-1,nextMarked=false;
+  for(;sat<=end;sat.setDate(sat.getDate()+7)){
+    const sun=new Date(sat);sun.setDate(sun.getDate()+1);
+    const games=[...(byDate[iso(sat)]||[]),...(byDate[iso(sun)]||[])];
+    const past=iso(sun)<today;
+    let items="";
+    const label=(sat.getMonth()===sun.getMonth()?`${pad(sat.getDate())}.`:dm(sat))+`/${dm(sun)}`;
+    if(!games.length){
+      if(filter!=="alle")continue;
+      items=`<li class="free${past?" past":""}"><span class="we">${label}</span><span class="match">spielfrei</span></li>`;
+    }else{
+      for(const g of games){
+        const home=isUs(g.heim);
+        if(filter==="heim"&&!home)continue;
+        const d=parse(g.datum);
+        let cls=home?"home":"away";
+        if(past)cls+=" past";
+        if(!past&&!nextMarked){cls+=" next";nextMarked=true}
+        const team=n=>isUs(n)?`<span class="us">${n}</span>`:n;
+        items+=`<li class="${cls}"><span class="we">${label}</span>
+          <span class="match">${team(g.heim)} – ${team(g.gast)}</span>
+          <span class="meta"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${g.zeit} Uhr`:""} · ${g.wettbewerb||""}${g.ort?` · ${g.ort}`:""}</span></li>`;
+      }
+      if(!items)continue;
+    }
+    const m=sat.getMonth()*1+sat.getFullYear()*12;
+    if(m!==month){html+=(month===-1?"":"</ul>")+`<h2>${MONATE[sat.getMonth()]} ${sat.getFullYear()}</h2><ul>`;month=m}
+    html+=items;
+  }
+  document.getElementById("list").innerHTML=html?html+"</ul>":"<p class='sub'>Keine Einträge.</p>";
+}
+
+document.querySelectorAll(".filter button").forEach(b=>b.onclick=()=>{
+  filter=b.dataset.f;
+  document.querySelectorAll(".filter button").forEach(x=>x.classList.toggle("on",x===b));
+  render();
+});
+
+fetch("spiele.json?v="+Date.now()).then(r=>r.json()).then(d=>{
+  data=d;
+  document.getElementById("title").textContent=`Spielplan ${d.team}`;
+  document.getElementById("sub").textContent=`${d.verein} · Saison bis ${dm(parse(d.bis))}${parse(d.bis).getFullYear()}`;
+  document.getElementById("note").textContent=`Heimspiele: ${d.heimspielort}. Stand: ${d.stand}. Termine ohne Gewähr – maßgeblich ist fussball.de.`;
+  render();
+}).catch(()=>{document.getElementById("list").innerHTML='<div class="err">Die Termine konnten nicht geladen werden.</div>'});
+</script>
+</body>
+</html>

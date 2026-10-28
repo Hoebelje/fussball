@@ -1,0 +1,25 @@
+{
+  "team": "B-Juniorinnen (U17)",
+  "verein": "SV Agrippina-Germania Köln",
+  "von": "2026-10-31",
+  "bis": "2027-06-13",
+  "heimspielort": "Kunstrasenplatz Zülpicher Wall, 50674 Köln",
+  "stand": "28.10.2026",
+  "spiele": [
+    { "datum": "2026-11-01", "zeit": "18:30", "heim": "SG GESV-Hennef/SV Allner Bödingen U17", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Freundschaftsspiel" },
+    { "datum": "2026-11-07", "zeit": "15:30", "heim": "Bergfried Leverkusen", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2026-11-14", "zeit": "16:45", "heim": "SV Agrippina-Germania Köln", "gast": "TuS Roisdorf 1932", "wettbewerb": "Bezirksliga" },
+    { "datum": "2026-11-28", "zeit": "17:15", "heim": "SSV Plittersdorf U17w", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2026-12-05", "zeit": "14:30", "heim": "SV Agrippina-Germania Köln", "gast": "FC Eschweiler 2020 B1", "wettbewerb": "Bezirksliga" },
+    { "datum": "2026-12-12", "zeit": "11:00", "heim": "SV Agrippina-Germania Köln", "gast": "SC Fortuna Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-02-28", "zeit": "11:00", "heim": "SC Selfkant", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-03-06", "zeit": "12:00", "heim": "SV Agrippina-Germania Köln", "gast": "SV GW Welldorf-Güsten", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-03-13", "zeit": "12:00", "heim": "SV Agrippina-Germania Köln", "gast": "Bergfried Leverkusen", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-04-17", "zeit": "16:00", "heim": "TuS Roisdorf 1932", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-04-24", "zeit": "12:00", "heim": "SV Agrippina-Germania Köln", "gast": "SSV Plittersdorf U17w", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-05-01", "zeit": "14:00", "heim": "FC Eschweiler 2020 B1", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-05-22", "zeit": "18:30", "heim": "SC Fortuna Köln", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-06-05", "zeit": "12:00", "heim": "SV Agrippina-Germania Köln", "gast": "SC Selfkant", "wettbewerb": "Bezirksliga" },
+    { "datum": "2027-06-12", "zeit": "14:30", "heim": "SV GW Welldorf-Güsten", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" }
+  ]
+}
