@@ -434,14 +434,25 @@ async function render(){
     const segs = segments(g);
     const maxC = Math.max(...segs.map(s => s.act.length));
     if (oneCol && maxC >= 3) return segs.forEach(s => drawSeg(s, g[0].c0));
-    // sonst nebeneinander
+    // sonst: nur während der Überschneidung nebeneinander, davor und danach volle Breite
     const laneEnd = [];
     g.forEach(bl => {
       let l = laneEnd.findIndex(t => t <= bl.a);
       if (l === -1){ l = laneEnd.length; laneEnd.push(bl.b); } else laneEnd[l] = bl.b;
       bl.lane = l;
     });
-    g.forEach(bl => drawBlock(bl, bl.c0, bl.c1, bl.lane, laneEnd.length, true));
+    g.forEach(bl => {
+      const pieces = [];
+      segs.forEach(sg => {
+        if (sg.act.indexOf(bl) < 0) return;
+        const act = sg.act.slice().sort((x,y) => x.lane-y.lane);
+        const n = act.length, li = act.indexOf(bl), last = pieces[pieces.length-1];
+        if (last && last.n === n && last.li === li && Math.abs(last.b - sg.a) < 1e-9) last.b = sg.b;
+        else pieces.push({ a: sg.a, b: sg.b, n, li });
+      });
+      const main = pieces.reduce((m,p) => (p.b-p.a) > (m.b-m.a) ? p : m, pieces[0]);
+      pieces.forEach(p => drawBlock(bl, bl.c0, bl.c1, p.li, p.n, true, p.a, p.b, p !== main));
+    });
   });
 
   const now = new Date();
@@ -467,21 +478,30 @@ function segments(g){
 }
 
 /* ---------- Blöcke zeichnen ---------- */
-function place(btn, c0, c1, a, b, lane, lanes){
+function place(btn, c0, c1, a, b, lane, lanes, bare){
   const x0 = COLS[c0].x, w = COLS[c1].x + CW - x0;
   btn.style.left = (x0 + lane*w/lanes + 2) + "px";
   btn.style.width = (w/lanes - 4) + "px";
   btn.style.top = (a-S)*H + 2 + "px";
-  btn.style.height = Math.max(20,(b-a)*H - 4) + "px";
+  btn.style.height = (bare ? Math.max(2,(b-a)*H - 1) : Math.max(20,(b-a)*H - 4)) + "px";
+  if (bare){ btn.style.top = (a-S)*H + "px"; }
 }
 
-function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b){
+function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b, bare){
   a = a ?? bl.a; b = b ?? bl.b;
   const e = bl.e, t = teamOf(e.title);
   const btn = document.createElement("button");
   btn.className = "ev" + (e.series ? "" : " single");
-  place(btn, c0, c1, a, b, lane, lanes);
+  place(btn, c0, c1, a, b, lane, lanes, bare);
   btn.style.background = t.bg; btn.style.color = t.fg;
+  if (bare){
+    // Teilstück eines Termins (z. B. während einer kurzen Überschneidung): ohne Text
+    btn.style.padding = "0"; btn.style.borderRadius = "3px";
+    btn.setAttribute("aria-label", t.name+", "+hm(e.start)+" bis "+hm(e.end));
+    btn.onclick = () => openSheet(bl, t);
+    layer.appendChild(btn);
+    return;
+  }
   const wide = (c1 > c0 && lanes === 1);
   // Teamteil aus dem Titel, z. B. "IDEAL U13 Heimspiel – …" -> "IDEAL U13"
   const head = (e.title||"").split(/\s+–\s+|\s+(?=(Heimspiel|Kinderfestival|Training|Testspiel|Spiel)\b)/i)[0].trim();
