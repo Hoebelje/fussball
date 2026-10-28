@@ -264,7 +264,7 @@ function spielHtml(g,i,label,cls){
   const ab=istAbgesetzt(g);
   const aend=(!ab&&g.spielnr)?aenderungsText(g):"";
   const pille=ab?`<span class="pill red">Abgesetzt</span>`:aend?`<span class="pill amber">${g.vorher&&g.vorher.datum?"Verlegt":"Geändert"}</span>`:"";
-  return `<li class="${cls}" data-idx="${i}"><span class="we">${esc(label)}</span>
+  return `<li class="${cls}" data-idx="${i}">${weHtml(label,g.datum)}
     <span class="match"><span class="o">${esc(gegner)}</span>${pille}</span>
     <span class="meta"><span class="o"><span class="tag">${home?"Heim":"Auswärts"}</span>${g.zeit?`${esc(g.zeit)} Uhr`:"Anstoß offen"}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></span>${aend?`
     <span class="hinweis">${aend}</span>`:""}</li>`;
