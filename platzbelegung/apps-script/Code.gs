@@ -26,12 +26,12 @@ const CACHE_MINUTES = 5;
 // Vereine auf fussball.de (die ID steht im Link der Vereinsseite hinter /id/)
 const VEREINE = [
   { id: "00ES8GN91400001IVV0AG08LVUPGND5I", name: /agrippina/i, kuerzel: "" },       // Titel z. B. "U17 (W) Heimspiel – Gegner"
-  { id: "00ES8GN91400001VVV0AG08LVUPGND5I", name: /ideal|casa de espa/i, kuerzel: "IDEAL" } // Titel z. B. "IDEAL Herren Heimspiel – Gegner"
+  { id: "00ES8GN91400001VVV0AG08LVUPGND5I", name: /ideal|casa\s*(de\s*)?espa(ñ|n)a/i, kuerzel: "IDEAL" } // Titel z. B. "IDEAL U13 Heimspiel – Gegner"
 ];
 
 // Nur Heimspiele auf dieser Spielstätte werden eingetragen (Teil des Namens genügt).
 // Leer lassen = alle Heimspiele. Den genauen Namen zeigt "testSpiele" im Protokoll.
-const SPIELSTAETTE = "";
+const SPIELSTAETTE = "Zülpicher Wall";
 
 const PLATZ_KALENDER = "Platz";
 const TAGE_VORAUS = 60;          // so weit in die Zukunft wird abgeglichen
@@ -48,6 +48,8 @@ const MANNSCHAFTEN = [
   { muster: /Frauen/i,             team: "Frauen",  dauer: 105, ort: "" },
   { muster: /Herren.*(II|2)\b/i,   team: "Herren 2", dauer: 105, ort: "" },
   { muster: /Herren/i,             team: "Herren 1", dauer: 105, ort: "" },
+  { muster: /B-Junior/i,           team: "",        dauer: 100, ort: "" },
+  { muster: /C-Junior/i,           team: "",        dauer: 90,  ort: "" },
   { muster: /[DE]-Junior/i,        team: "",        dauer: 75,  ort: "1/2 Platz" },
   { muster: /[FG]-Junior|Bambini/i, team: "",       dauer: 60,  ort: "1/4 Platz" },
   { muster: /.*/,                  team: "",        dauer: 105, ort: "" }
@@ -201,10 +203,10 @@ function geplanteEintraege() {
       const anpfiff = Utilities.parseDate(s.datum + ' ' + s.zeit, 'Europe/Berlin', 'yyyy-MM-dd HH:mm');
       const start = new Date(anpfiff.getTime() - VORLAUF_MIN * 60000);
       const ende = new Date(anpfiff.getTime() + m.dauer * 60000);
-      const team = v.kuerzel ? v.kuerzel + ' ' + s.mannschaft : (m.team || s.mannschaft);
+      const team = v.kuerzel ? v.kuerzel + ' ' + teamName(s, v) : (m.team || s.mannschaft);
       plan.push({
         nr: s.nr,
-        titel: team + ' Heimspiel – ' + s.gast,
+        titel: v.name.test(s.gast) ? team + ' ' + (/kinderfestival/i.test(s.heim + s.gast) ? 'Kinderfestival' : (s.wettbewerb || 'Spiel')) : team + ' Heimspiel – ' + s.gast,
         start: start,
         ende: ende,
         ort: m.ort,
@@ -214,6 +216,14 @@ function geplanteEintraege() {
     });
   });
   return plan;
+}
+
+/** Teamname ohne Vereinsnamen, z. B. "Casa España U13" -> "U13", "Casa España I" -> "Herren I" */
+function teamName(s, v) {
+  const rest = s.heim.replace(/-\s*Kinderfestival/i, '').replace(/ideal\s*c\.?\s*f\.?/i, '').replace(v.name, '').replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim();
+  if (!rest) return s.mannschaft;
+  if (/^(I{1,3}|IV|V|\d)$/.test(rest)) return s.mannschaft + ' ' + rest;
+  return rest;
 }
 
 /** Lädt den Vereinsspielplan eines Vereins (alle Seiten) und zerlegt ihn. */
@@ -279,7 +289,8 @@ function spielplanParsen(html, verein) {
     }
 
     if (/row-venue/.test(klasse)) {
-      if (zuletzt) zuletzt.ort = t;
+      const zelle = (z.match(/<td colspan="3"[^>]*>([\s\S]*?)<\/td>/) || [])[1];
+      if (zuletzt) zuletzt.ort = (zelle ? text(zelle) : t).split(/Legende|span,|class=/)[0].replace(/["<>]/g, '').trim();
       return;
     }
 
@@ -290,11 +301,12 @@ function spielplanParsen(html, verein) {
 
     const link = (z.match(/href="[^"]*\/spiel\/[^"]*\/-\/spiel\/([A-Z0-9]+)/i) || z.match(/\/spiel\/([A-Z0-9]{20,})/i) || [])[1];
     const score = text((z.match(/<td class="column-score">([\s\S]*?)<\/td>/) || [])[1] || '');
+    const mt = (mannschaft || '').split('|').map(function (x) { return x.trim(); });
     const spiel = {
       datum: datum,
       zeit: zeit,
-      mannschaft: mannschaft || '',
-      wettbewerb: wettbewerb || '',
+      mannschaft: mt[0] || '',
+      wettbewerb: mt[1] || wettbewerb || '',
       heim: ohneEV(namen[0]),
       gast: ohneEV(namen[1]),
       heimspiel: verein.name.test(namen[0]),
