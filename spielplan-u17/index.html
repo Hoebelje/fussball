@@ -404,7 +404,7 @@ document.querySelectorAll(".filter button").forEach(b=>b.onclick=()=>{
 function updateTexte(){
   const kurz=(String(data.team).match(/\((U\d+)\)/)||[])[1]||data.team;
   $("title").innerHTML=`<span class="lang">Spielplan ${esc(data.team)}</span><span class="kurz">Spielplan ${esc(kurz)}</span>`;
-  $("sub").innerHTML=`<span class="lang">${esc(data.verein)} · </span>Saison bis ${dm(parse(data.bis))}${parse(data.bis).getFullYear()}`;
+  $("sub").textContent=`Saison bis ${dm(parse(data.bis))}${parse(data.bis).getFullYear()}`;
   $("note").textContent=`Heimspiele: ${data.heimspielort}. Stand: ${data.stand}. Termine ohne Gewähr – maßgeblich ist fussball.de.`;
 }
 
