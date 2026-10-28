@@ -188,8 +188,7 @@ function abgleichEinrichten() {
  * Holt den Mannschaftsspielplan von fussball.de und aktualisiert damit die offiziellen Spiele
  * (Einträge mit "spielnr"). Änderungen an Datum, Anstoßzeit oder Heimrecht werden in "vorher"
  * festgehalten, abgesetzte oder von fussball.de verschwundene Spiele bekommen "status": "abgesetzt".
- * Selbst eingetragene Termine ohne "spielnr" bleiben erhalten, außer an einem Tag, an dem
- * fussball.de ein (nicht abgesetztes) offizielles Spiel führt.
+ * Selbst eingetragene Termine ohne "spielnr" werden nie verändert oder entfernt.
  */
 function abgleichFussballDe() {
   const props = PropertiesService.getScriptProperties();
@@ -284,8 +283,8 @@ function zusammenfuehren(alte, frisch, heute) {
   // Offizielle Spiele, die es auf fussball.de nicht mehr gibt, bleiben als "abgesetzt" stehen
   const verschwunden = Object.keys(bisher).map(nr => Object.assign({}, bisher[nr], { status: 'abgesetzt' }));
 
-  const offizielleTage = new Set(offiziell.filter(s => s.status !== 'abgesetzt').map(s => s.datum));
-  const eigene = alte.filter(s => !s.spielnr && !offizielleTage.has(s.datum));
+  // Eigene Termine (ohne spielnr) bleiben immer erhalten
+  const eigene = alte.filter(s => !s.spielnr);
 
   return eigene.concat(offiziell, verschwunden)
     .sort((a, b) => (a.datum + (a.zeit || '')).localeCompare(b.datum + (b.zeit || '')));

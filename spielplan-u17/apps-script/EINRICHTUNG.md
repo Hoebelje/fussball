@@ -85,8 +85,8 @@ durchgestrichen mit roter Pille „Abgesetzt“ stehen – auch wenn sie auf fus
 Eigene Termine bekommen nie solche Markierungen.
 
 **Offizielle Spiele** (alle, die auf fussball.de stehen) werden beim Abgleich immer auf den fussball.de-Stand gesetzt.
-Änderungen an ihnen im Bearbeiten-Modus halten also nur bis zur nächsten Nacht. Eigene Termine an einem Tag,
-an dem fussball.de ein offizielles Spiel führt, werden durch das offizielle Spiel ersetzt.
+Änderungen an ihnen im Bearbeiten-Modus halten also nur bis zur nächsten Nacht. Eigene Termine werden vom Abgleich
+nie verändert oder entfernt.
 
 ---
 

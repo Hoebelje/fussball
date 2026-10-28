@@ -48,6 +48,18 @@ li.cancel .tag{background:#F3F4F7;color:var(--faint)}
 .hinweis{grid-column:2;margin-top:6px;font-size:12px;font-weight:600;padding:5px 8px;border-radius:6px;background:#FEF3E0;color:#B06000;line-height:1.4}
 .hinweis .am{font-weight:400}
 li.home .hinweis{background:#FFF7EA}
+li.grp{display:block;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+li.grp .gh{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 12px;background:#F5F7FC;font-size:12px;font-weight:700;color:var(--muted);border-bottom:1px solid var(--line)}
+li.grp .gh span{font-weight:500;color:var(--faint)}
+li.grp ul{gap:0}
+li.grp li.item{border:none;border-radius:0;border-bottom:1px solid var(--line)}
+li.grp li.item:last-child{border-bottom:none}
+li.grp li.item.home{border-left:4px solid var(--homeline)}
+li.grp li.item.away{border-left:4px solid var(--accent)}
+li.grp li.item.cancel{border-left:4px solid #C5221F}
+li.grp li.formrow{padding:8px}
+li.mehr{display:flex;justify-content:flex-end;margin-top:-2px;padding:0 4px}
+.we{white-space:nowrap}
 .note{margin-top:20px;font-size:12px;color:var(--faint);line-height:1.5}
 .err{padding:12px;border:1px solid #f0c98a;background:#fff4e0;border-radius:10px;font-size:13px}
 /* Bearbeiten */
@@ -186,18 +198,31 @@ function render(){
       if(editMode&&offen&&offen.typ==="neu"&&offen.datum===slot.frei) items=formHtml(null,slot.frei);
       else items=`<li class="item free${past?" past":""}" data-frei="${slot.frei}">${weHtml(slot.label,slot.frei)}<span class="match">spielfrei</span></li>`;
     }else{
-      for(const {s:g,i} of games){
-        const home=isUs(g.heim), ab=istAbgesetzt(g);
-        if(filter!=="alle"&&ab)continue;
-        if(filter==="heim"&&!home)continue;
-        if(editMode&&offen&&offen.typ==="spiel"&&offen.idx===i){items+=formHtml(g,g.datum,i);continue}
+      const sichtbar=games.filter(({s:g})=>!(filter!=="alle"&&istAbgesetzt(g))&&!(filter==="heim"&&!isUs(g.heim)));
+      const neuHier=editMode&&offen&&offen.typ==="neu"&&offen.slot===slot.start;
+      if(!sichtbar.length&&!neuHier)continue;
+      let karten="";
+      for(const {s:g,i} of sichtbar){
+        if(editMode&&offen&&offen.typ==="spiel"&&offen.idx===i){karten+=formHtml(g,g.datum,i);continue}
+        const home=isUs(g.heim), ab=istAbgesetzt(g), d=parse(g.datum);
         let cls="item "+(home?"home":"away");
         if(ab)cls+=" cancel";
         if(past)cls+=" past";
         if(!past&&!ab&&!nextMarked){cls+=" next";nextMarked=true}
-        items+=spielHtml(g,i,slot.label,cls);
+        karten+=spielHtml(g,i,`${TAGE[d.getDay()]} ${dm(d)}`,cls);
       }
-      if(!items)continue;
+      if(neuHier)karten+=formHtml(null,offen.datum);
+      const anzahl=sichtbar.length+(neuHier?1:0);
+      // Zwei oder mehr Termine: gemeinsamer Wochenend-Kasten, sonst Einzelkarte
+      items=anzahl>1
+        ?`<li class="grp"><div class="gh">${slot.frei?"Wochenende "+slot.label:esc(slot.label)} <span>${sichtbar.length} Termine</span></div><ul>${karten}</ul></li>`
+        :karten;
+      // Bearbeiten: weiteren Termin an diesem Wochenende anlegen
+      if(editMode&&speicher.get()&&slot.frei&&!neuHier){
+        const hatSa=games.some(({s})=>s.datum===slot.tage[0]), hatSo=games.some(({s})=>s.datum===slot.tage[1]);
+        const tag=hatSa&&!hatSo?slot.tage[1]:slot.tage[0];
+        items+=`<li class="mehr"><button class="link" type="button" data-mehr="${slot.start}" data-tag="${tag}">+ weiterer Termin</button></li>`;
+      }
     }
     if(jetzt){items=items.replace(/^<li /,'<li data-jetzt="1" ');jetztMarked=true}
     const m=slot.monat.getMonth()+slot.monat.getFullYear()*12;
@@ -241,7 +266,7 @@ function spielHtml(g,i,label,cls){
   const pille=ab?`<span class="pill red">Abgesetzt</span>`:aend?`<span class="pill amber">${g.vorher&&g.vorher.datum?"Verlegt":"Geändert"}</span>`:"";
   return `<li class="${cls}" data-idx="${i}"><span class="we">${esc(label)}</span>
     <span class="match"><span class="o">${esc(gegner)}</span>${pille}</span>
-    <span class="meta"><span class="o"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${esc(g.zeit)} Uhr`:""}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></span>${aend?`
+    <span class="meta"><span class="o"><span class="tag">${home?"Heim":"Auswärts"}</span>${g.zeit?`${esc(g.zeit)} Uhr`:"Anstoß offen"}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></span>${aend?`
     <span class="hinweis">${aend}</span>`:""}</li>`;
 }
 
@@ -299,7 +324,7 @@ function renderPanel(){
     return;
   }
   p.innerHTML=`<div class="bar"><button class="btn primary" type="button" id="neubtn">+ Spiel hinzufügen</button>
-    <span class="hint">Termin antippen zum Ändern. Für Besucher sichtbar nach ca. 1–2 Min.</span>
+    <span class="hint">Termin antippen zum Ändern.</span>
     <span style="flex:1"></span><button class="link" type="button" id="logout">Abmelden</button></div>`;
 }
 
@@ -345,7 +370,7 @@ async function senden(body,f,b,okText){
   msg.className="msg";msg.textContent="Speichere …";
   try{
     const r=await api(body);
-    if(r.ok){data=r.daten;offen=null;updateTexte();render();toast(okText+" Für Besucher in ca. 1–2 Min. sichtbar.")}
+    if(r.ok){data=r.daten;offen=null;updateTexte();render();toast(okText)}
     else if(r.passwortFalsch){speicher.del();offen=null;renderPanel();render();toast("Das Passwort wurde geändert. Bitte neu anmelden.")}
     else{if(r.daten){data=r.daten}msg.className="msg bad";msg.textContent=r.fehler||"Speichern fehlgeschlagen.";f.querySelectorAll("button").forEach(x=>x.disabled=false)}
   }catch(e){msg.className="msg bad";msg.textContent="Speichern fehlgeschlagen: "+e.message;f.querySelectorAll("button").forEach(x=>x.disabled=false)}
@@ -355,6 +380,7 @@ document.addEventListener("click",ev=>{
   const t=ev.target;
   if(t.id==="logout"){speicher.del();setEdit(false);toast("Abgemeldet.");return}
   if(t.id==="neubtn"){offen={typ:"neu"};render();return}
+  if(t.dataset&&t.dataset.mehr){offen={typ:"neu",datum:t.dataset.tag,slot:t.dataset.mehr};render();return}
   const act=t.dataset&&t.dataset.act;
   if(act==="abbrechen"){offen=null;render();return}
   if(act==="loeschen"){
@@ -366,7 +392,7 @@ document.addEventListener("click",ev=>{
   const li=t.closest("li.item");
   if(!li)return;
   if(li.dataset.idx!=null){offen={typ:"spiel",idx:+li.dataset.idx};render()}
-  else if(li.dataset.frei){offen={typ:"neu",datum:li.dataset.frei};render()}
+  else if(li.dataset.frei){offen={typ:"neu",datum:li.dataset.frei,slot:li.dataset.frei};render()}
 });
 
 document.querySelectorAll(".filter button").forEach(b=>b.onclick=()=>{
