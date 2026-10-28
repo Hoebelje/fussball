@@ -35,23 +35,24 @@ const SPIELSTAETTE = "Zülpicher Wall";
 
 const PLATZ_KALENDER = "Platz";
 const TAGE_VORAUS = 60;          // so weit in die Zukunft wird abgeglichen
-const VORLAUF_MIN = 60;          // Platz ist so viele Minuten vor Anpfiff belegt
+const VORLAUF_MIN = 0;           // Termin beginnt genau mit dem Anpfiff
 
 // Mannschaftsart auf fussball.de -> Teamkürzel (für SV Agrippina), Spieldauer in Minuten, Platzanteil
 // Reihenfolge wichtig: das erste passende Muster gilt.
 const MANNSCHAFTEN = [
   { muster: /A-Juniorinnen/i,      team: "U19 (W)", dauer: 105, ort: "" },
-  { muster: /B-Juniorinnen/i,      team: "U17 (W)", dauer: 100, ort: "" },
-  { muster: /C-Juniorinnen/i,      team: "U15 (W)", dauer: 90,  ort: "" },
-  { muster: /D-Juniorinnen/i,      team: "U13 (W)", dauer: 75,  ort: "1/2 Platz" },
+  { muster: /B-Juniorinnen/i,      team: "U17 (W)", dauer: 95,  ort: "" },
+  { muster: /C-Juniorinnen/i,      team: "U15 (W)", dauer: 80,  ort: "" },
+  { muster: /D-Juniorinnen/i,      team: "U13 (W)", dauer: 70,  ort: "1/2 Platz" },
   { muster: /A-Junioren/i,         team: "U19 (M)", dauer: 105, ort: "" },
   { muster: /Frauen/i,             team: "Frauen",  dauer: 105, ort: "" },
   { muster: /Herren.*(II|2)\b/i,   team: "Herren 2", dauer: 105, ort: "" },
   { muster: /Herren/i,             team: "Herren 1", dauer: 105, ort: "" },
-  { muster: /B-Junior/i,           team: "",        dauer: 100, ort: "" },
-  { muster: /C-Junior/i,           team: "",        dauer: 90,  ort: "" },
-  { muster: /[DE]-Junior/i,        team: "",        dauer: 75,  ort: "1/2 Platz" },
-  { muster: /[FG]-Junior|Bambini/i, team: "",       dauer: 60,  ort: "1/4 Platz" },
+  { muster: /B-Junior/i,           team: "",        dauer: 95,  ort: "" },
+  { muster: /C-Junior/i,           team: "",        dauer: 80,  ort: "" },
+  { muster: /Kinderfestival/i,     team: "",        dauer: 120, ort: "1/2 Platz" },
+  { muster: /[DE]-Junior/i,        team: "",        dauer: 70,  ort: "1/2 Platz" },
+  { muster: /[FG]-Junior|Bambini/i, team: "",       dauer: 120, ort: "1/4 Platz" },
   { muster: /.*/,                  team: "",        dauer: 105, ort: "" }
 ];
 
@@ -199,7 +200,7 @@ function geplanteEintraege() {
     vereinsSpiele(v).forEach(function (s) {
       if (!s.heimspiel || s.abgesetzt || !s.zeit) return;
       if (SPIELSTAETTE && (s.ort || '').toLowerCase().indexOf(SPIELSTAETTE.toLowerCase()) < 0) return;
-      const m = MANNSCHAFTEN.filter(function (x) { return x.muster.test(s.mannschaft + ' ' + s.heim); })[0];
+      const m = MANNSCHAFTEN.filter(function (x) { return x.muster.test(s.mannschaft + ' ' + s.heim + ' ' + s.gast); })[0];
       const anpfiff = Utilities.parseDate(s.datum + ' ' + s.zeit, 'Europe/Berlin', 'yyyy-MM-dd HH:mm');
       const start = new Date(anpfiff.getTime() - VORLAUF_MIN * 60000);
       const ende = new Date(anpfiff.getTime() + m.dauer * 60000);
