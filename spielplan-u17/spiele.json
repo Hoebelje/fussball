@@ -5,6 +5,7 @@
   "bis": "2027-06-13",
   "heimspielort": "Kunstrasenplatz Zülpicher Wall, 50674 Köln",
   "stand": "28.10.2026",
+  "bearbeiten_api": "",
   "spiele": [
     { "datum": "2026-11-01", "zeit": "18:30", "heim": "SG GESV-Hennef/SV Allner Bödingen U17", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Freundschaftsspiel" },
     { "datum": "2026-11-07", "zeit": "15:30", "heim": "Bergfried Leverkusen", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga" },

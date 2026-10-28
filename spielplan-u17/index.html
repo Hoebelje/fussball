@@ -5,92 +5,307 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spielplan U17</title>
 <style>
-:root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;--home:#E8F5EC;--homeline:#1E8E3E;color-scheme:light}
+:root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;--home:#E8F5EC;--homeline:#1E8E3E;--danger:#C5221F;color-scheme:light}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
 .app{max-width:680px;margin:0 auto;padding:16px 12px 24px}
+.top{display:flex;align-items:flex-start;gap:12px}
+.top>div{flex:1;min-width:0}
 h1{margin:0 0 4px;font-size:22px;font-weight:700;color:var(--accent)}
 .sub{margin:0 0 14px;font-size:13px;color:var(--muted)}
+.editbtn{flex:none;display:none;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--accent);font-size:13px;font-weight:600;cursor:pointer}
+.editbtn.show{display:inline-flex}
+.editbtn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.editbtn svg{width:14px;height:14px}
 .filter{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
-.filter button{font:inherit;font-size:13px;height:34px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.filter button{font-size:13px;height:34px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
 .filter button.on{background:var(--accent);border-color:var(--accent);color:#fff}
 h2{margin:18px 0 6px;font-size:14px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
-li{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:92px 1fr;gap:2px 12px;align-items:start}
+li.item{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:92px 1fr;gap:2px 12px;align-items:start}
 li.home{background:var(--home);border-color:#BFE3C9;border-left:4px solid var(--homeline)}
 li.away{border-left:4px solid var(--accent)}
 li.free{background:#F7F8FB;color:var(--faint);border-style:dashed}
 li.past{opacity:.5}
 li.next{box-shadow:0 0 0 2px var(--accent)}
+.editing li.item{cursor:pointer}
+.editing li.item:hover{border-color:var(--accent)}
+.editing li.item .match::after{content:" ✎";font-weight:400;color:var(--accent);font-size:13px}
+.editing li.free .match::after{content:" + Spiel eintragen";color:var(--accent);font-size:13px}
 .we{font-size:13px;font-weight:600;color:var(--muted);grid-row:span 2}
 .match{font-size:15px;font-weight:600;line-height:1.35}
-.match .us{color:var(--accent)}
 .meta{font-size:12px;color:var(--muted)}
 .tag{display:inline-block;font-size:11px;font-weight:600;padding:1px 7px;border-radius:99px;margin-right:6px;background:var(--surface);color:var(--accent)}
 li.home .tag{background:#fff;color:var(--homeline)}
 .note{margin-top:20px;font-size:12px;color:var(--faint);line-height:1.5}
 .err{padding:12px;border:1px solid #f0c98a;background:#fff4e0;border-radius:10px;font-size:13px}
+/* Bearbeiten */
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;margin-bottom:12px}
+.panel p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.btn{height:38px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:14px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.danger{color:var(--danger);border-color:#F2C4C2}
+.btn.danger.confirm{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn:disabled{opacity:.6;cursor:default}
+.link{background:none;border:none;padding:0;color:var(--accent);font-size:13px;cursor:pointer;text-decoration:underline}
+.hint{font-size:12px;color:var(--muted)}
+li.formrow{display:block}
+form.edit{border:2px solid var(--accent);border-radius:12px;padding:12px;background:#fff;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+form.edit label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--muted)}
+form.edit .full{grid-column:1/-1}
+form.edit input,form.edit select{height:40px;border:1px solid var(--line);border-radius:8px;padding:0 10px;font-size:15px;font-weight:400;color:var(--ink);background:#fff;width:100%}
+form.edit input:focus,form.edit select:focus,.panel input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;height:40px}
+.seg label{flex:1;flex-direction:row;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;gap:0}
+.seg input{position:absolute;opacity:0;width:0;height:0}
+.seg label:has(input:checked){background:var(--accent);color:#fff}
+.actions{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.actions .spacer{flex:1}
+.msg{grid-column:1/-1;font-size:13px;margin:0}
+.msg.bad{color:var(--danger)}
+.toast{position:sticky;bottom:12px;margin-top:12px;background:var(--ink);color:#fff;border-radius:10px;padding:10px 14px;font-size:13px;display:none}
+.toast.show{display:block}
+.login{display:flex;gap:8px;flex-wrap:wrap}
+.login input{flex:1;min-width:160px;height:38px;border:1px solid var(--line);border-radius:10px;padding:0 10px;font-size:15px;background:#fff}
+@media (max-width:420px){form.edit{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<div class="app">
-  <h1 id="title">Spielplan</h1>
-  <p class="sub" id="sub"></p>
+<div class="app" id="app">
+  <div class="top">
+    <div>
+      <h1 id="title">Spielplan</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <button class="editbtn" id="editbtn" type="button" aria-pressed="false">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5l2 2L5 13H3v-2l8.5-8.5z"/></svg>
+      <span>Bearbeiten</span>
+    </button>
+  </div>
+
+  <div id="editpanel"></div>
+
   <div class="filter" role="group" aria-label="Filter">
     <button data-f="alle" class="on">Alle Wochenenden</button>
     <button data-f="spiele">Nur Spiele</button>
     <button data-f="heim">Nur Heimspiele</button>
   </div>
   <div id="list"></div>
+  <div class="toast" id="toast" role="status"></div>
   <p class="note" id="note"></p>
 </div>
 <script>
 const MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const TAGE=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const WETTBEWERBE=["Bezirksliga","Freundschaftsspiel","Kreispokal","Hallenturnier","Turnier"];
 const pad=n=>String(n).padStart(2,"0");
 const iso=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 const dm=d=>`${pad(d.getDate())}.${pad(d.getMonth()+1)}.`;
 const parse=s=>{const[y,m,t]=s.split("-").map(Number);return new Date(y,m-1,t)};
-let data,filter="alle";
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const isUs=n=>/agrippina/i.test(n||"");
+const $=id=>document.getElementById(id);
 
+let data,filter="alle";
+// Bearbeiten-Zustand
+let editMode=false, offen=null; // offen: {typ:"neu"|"spiel", idx, datum}
+const PW_KEY="spielplanU17Passwort";
+const speicher={
+  get(){try{return localStorage.getItem(PW_KEY)||sessionPw}catch(e){return sessionPw}},
+  set(v){sessionPw=v;try{localStorage.setItem(PW_KEY,v)}catch(e){}},
+  del(){sessionPw="";try{localStorage.removeItem(PW_KEY)}catch(e){}}
+};
+let sessionPw="";
+
+/* ---------- Anzeige ---------- */
 function render(){
-  const isUs=n=>/agrippina/i.test(n);
   const byDate={};
-  for(const s of data.spiele){(byDate[s.datum]=byDate[s.datum]||[]).push(s)}
-  // erster Samstag ab "von"
+  data.spiele.forEach((s,i)=>{(byDate[s.datum]=byDate[s.datum]||[]).push({s,i})});
   let sat=parse(data.von);while(sat.getDay()!==6)sat.setDate(sat.getDate()+1);
   const end=parse(data.bis), today=iso(new Date());
   let html="",month=-1,nextMarked=false;
+
+  // Formular für neues Spiel ganz oben
+  if(editMode&&offen&&offen.typ==="neu"&&!offen.datum) html+=`<ul>${formHtml(null,"")}</ul>`;
+
+  // Spiele außerhalb des Saisonzeitraums im Bearbeiten-Modus trotzdem zeigen
+  const inRange=new Set();
   for(;sat<=end;sat.setDate(sat.getDate()+7)){
     const sun=new Date(sat);sun.setDate(sun.getDate()+1);
+    inRange.add(iso(sat));inRange.add(iso(sun));
     const games=[...(byDate[iso(sat)]||[]),...(byDate[iso(sun)]||[])];
     const past=iso(sun)<today;
-    let items="";
     const label=(sat.getMonth()===sun.getMonth()?`${pad(sat.getDate())}.`:dm(sat))+`/${dm(sun)}`;
+    let items="";
     if(!games.length){
-      if(filter!=="alle")continue;
-      items=`<li class="free${past?" past":""}"><span class="we">${label}</span><span class="match">spielfrei</span></li>`;
+      if(filter!=="alle"&&!(editMode&&offen&&offen.datum===iso(sat)))continue;
+      if(editMode&&offen&&offen.typ==="neu"&&offen.datum===iso(sat)) items=formHtml(null,iso(sat));
+      else items=`<li class="item free${past?" past":""}" data-frei="${iso(sat)}"><span class="we">${label}</span><span class="match">spielfrei</span></li>`;
     }else{
-      for(const g of games){
+      for(const {s:g,i} of games){
         const home=isUs(g.heim);
         if(filter==="heim"&&!home)continue;
-        const d=parse(g.datum);
-        let cls=home?"home":"away";
+        if(editMode&&offen&&offen.typ==="spiel"&&offen.idx===i){items+=formHtml(g,g.datum,i);continue}
+        let cls="item "+(home?"home":"away");
         if(past)cls+=" past";
         if(!past&&!nextMarked){cls+=" next";nextMarked=true}
-        const gegner=home?g.gast:g.heim;
-        items+=`<li class="${cls}"><span class="we">${label}</span>
-          <span class="match">${gegner}</span>
-          <span class="meta"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${g.zeit} Uhr`:""} · ${g.wettbewerb||""}${g.ort?` · ${g.ort}`:""}</span></li>`;
+        items+=spielHtml(g,i,label,cls);
       }
       if(!items)continue;
     }
-    const m=sat.getMonth()*1+sat.getFullYear()*12;
+    const m=sat.getMonth()+sat.getFullYear()*12;
     if(m!==month){html+=(month===-1?"":"</ul>")+`<h2>${MONATE[sat.getMonth()]} ${sat.getFullYear()}</h2><ul>`;month=m}
     html+=items;
   }
-  document.getElementById("list").innerHTML=html?html+"</ul>":"<p class='sub'>Keine Einträge.</p>";
+  if(month!==-1)html+="</ul>";
+
+  if(editMode){
+    // Spiele unter der Woche oder außerhalb des Zeitraums
+    const rest=data.spiele.map((s,i)=>({s,i})).filter(({s})=>!inRange.has(s.datum));
+    if(rest.length){
+      html+=`<h2>Weitere Termine</h2><p class="hint">Diese Spiele liegen nicht an einem Wochenende im Saisonzeitraum und werden Besuchern nicht angezeigt.</p><ul>`;
+      for(const {s:g,i} of rest){
+        if(offen&&offen.typ==="spiel"&&offen.idx===i)html+=formHtml(g,g.datum,i);
+        else html+=spielHtml(g,i,dm(parse(g.datum))+String(parse(g.datum).getFullYear()).slice(2),"item "+(isUs(g.heim)?"home":"away"));
+      }
+      html+="</ul>";
+    }
+  }
+  $("list").innerHTML=html||"<p class='sub'>Keine Einträge.</p>";
+  if(editMode&&offen){const f=document.querySelector("form.edit");if(f){f.scrollIntoView({block:"nearest"});}}
 }
+
+function spielHtml(g,i,label,cls){
+  const home=isUs(g.heim), d=parse(g.datum), gegner=home?g.gast:g.heim;
+  return `<li class="${cls}" data-idx="${i}"><span class="we">${esc(label)}</span>
+    <span class="match">${esc(gegner)}</span>
+    <span class="meta"><span class="tag">${home?"Heim":"Auswärts"}</span>${TAGE[d.getDay()]} ${dm(d)}${g.zeit?`, ${esc(g.zeit)} Uhr`:""}${g.wettbewerb?` · ${esc(g.wettbewerb)}`:""}${g.ort?` · ${esc(g.ort)}`:""}</span></li>`;
+}
+
+/* ---------- Formular ---------- */
+function formHtml(g,datum,idx){
+  const neu=!g, home=g?isUs(g.heim):true, gegner=g?(home?g.gast:g.heim):"";
+  return `<li class="formrow"><form class="edit" data-idx="${idx==null?"":idx}" novalidate>
+    <label>Datum<input type="date" name="datum" value="${esc(datum)}" required></label>
+    <label>Anstoß<input type="time" name="zeit" value="${esc(g?g.zeit:"")}"></label>
+    <div class="full"><label>Spielort</label>
+      <div class="seg" role="radiogroup" aria-label="Heim oder Auswärts">
+        <label><input type="radio" name="ha" value="heim" ${home?"checked":""}>Heim</label>
+        <label><input type="radio" name="ha" value="auswaerts" ${home?"":"checked"}>Auswärts</label>
+      </div></div>
+    <label class="full">Gegner<input name="gegner" value="${esc(gegner)}" maxlength="80" required autocomplete="off"></label>
+    <label>Wettbewerb<input name="wettbewerb" value="${esc(g?g.wettbewerb:"Bezirksliga")}" list="wettbewerbe" maxlength="60"></label>
+    <label>Abweichender Ort <span style="font-weight:400">(optional)</span><input name="ort" value="${esc(g&&g.ort||"")}" maxlength="80"></label>
+    <p class="msg" aria-live="polite"></p>
+    <div class="actions">
+      <button class="btn primary" type="submit">${neu?"Spiel speichern":"Änderung speichern"}</button>
+      <button class="btn" type="button" data-act="abbrechen">Abbrechen</button>
+      <span class="spacer"></span>
+      ${neu?"":`<button class="btn danger" type="button" data-act="loeschen">Löschen</button>`}
+    </div>
+  </form></li>`;
+}
+
+function formDaten(f){
+  const v=n=>f.elements[n].value.trim();
+  const home=f.querySelector('input[name="ha"]:checked').value==="heim";
+  const gegner=v("gegner"), verein=data.verein||"SV Agrippina-Germania Köln";
+  const s={datum:v("datum"),zeit:v("zeit"),heim:home?verein:gegner,gast:home?gegner:verein,wettbewerb:v("wettbewerb")};
+  if(v("ort"))s.ort=v("ort");
+  return s;
+}
+
+/* ---------- Bearbeiten-Modus ---------- */
+function setEdit(on){
+  editMode=on;offen=null;
+  $("app").classList.toggle("editing",on);
+  const b=$("editbtn");b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);
+  b.querySelector("span").textContent=on?"Fertig":"Bearbeiten";
+  renderPanel();render();
+}
+
+function renderPanel(){
+  const p=$("editpanel");
+  if(!editMode){p.innerHTML="";return}
+  if(!speicher.get()){
+    p.innerHTML=`<div class="panel"><p>Zum Bearbeiten bitte das Bearbeitungs-Passwort eingeben.</p>
+      <form class="login" id="loginform"><input type="password" name="pw" placeholder="Passwort" autocomplete="current-password" aria-label="Passwort">
+      <button class="btn primary" type="submit">Anmelden</button></form><p class="msg" id="loginmsg" style="margin:8px 0 0"></p></div>`;
+    setTimeout(()=>{const i=p.querySelector("input");i&&i.focus()},0);
+    return;
+  }
+  p.innerHTML=`<div class="bar"><button class="btn primary" type="button" id="neubtn">+ Spiel hinzufügen</button>
+    <span class="hint">Termin antippen zum Ändern. Für Besucher sichtbar nach ca. 1–2 Min.</span>
+    <span style="flex:1"></span><button class="link" type="button" id="logout">Abmelden</button></div>`;
+}
+
+async function api(body){
+  const r=await fetch(data.bearbeiten_api,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error("Server nicht erreichbar ("+r.status+")");
+  return r.json();
+}
+
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("show"),5000)}
+
+$("editbtn").onclick=()=>setEdit(!editMode);
+
+document.addEventListener("submit",async ev=>{
+  const f=ev.target;
+  if(f.id==="loginform"){
+    ev.preventDefault();
+    const pw=f.elements.pw.value, msg=$("loginmsg"), b=f.querySelector("button");
+    if(!pw)return;
+    b.disabled=true;msg.className="msg";msg.textContent="Prüfe …";
+    try{
+      const r=await api({aktion:"pruefen",passwort:pw});
+      if(r.ok){speicher.set(pw);renderPanel();render();toast("Angemeldet. Termin antippen zum Bearbeiten.")}
+      else{msg.className="msg bad";msg.textContent=r.fehler||"Anmeldung fehlgeschlagen.";b.disabled=false}
+    }catch(e){msg.className="msg bad";msg.textContent=e.message;b.disabled=false}
+    return;
+  }
+  if(f.classList.contains("edit")){
+    ev.preventDefault();
+    const s=formDaten(f), msg=f.querySelector(".msg"), b=f.querySelector('[type="submit"]');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s.datum)){msg.className="msg bad";msg.textContent="Bitte ein Datum wählen.";return}
+    if(!f.elements.gegner.value.trim()){msg.className="msg bad";msg.textContent="Bitte den Gegner eintragen.";f.elements.gegner.focus();return}
+    const idx=f.dataset.idx;
+    const body=idx===""?{aktion:"neu",spiel:s}:{aktion:"aendern",alt:data.spiele[+idx],spiel:s};
+    await senden(body,f,b,idx===""?"Spiel hinzugefügt.":"Änderung gespeichert.");
+  }
+});
+
+async function senden(body,f,b,okText){
+  const msg=f.querySelector(".msg");
+  body.passwort=speicher.get();
+  f.querySelectorAll("button").forEach(x=>x.disabled=true);
+  msg.className="msg";msg.textContent="Speichere …";
+  try{
+    const r=await api(body);
+    if(r.ok){data=r.daten;offen=null;updateTexte();render();toast(okText+" Für Besucher in ca. 1–2 Min. sichtbar.")}
+    else if(r.passwortFalsch){speicher.del();offen=null;renderPanel();render();toast("Das Passwort wurde geändert. Bitte neu anmelden.")}
+    else{if(r.daten){data=r.daten}msg.className="msg bad";msg.textContent=r.fehler||"Speichern fehlgeschlagen.";f.querySelectorAll("button").forEach(x=>x.disabled=false)}
+  }catch(e){msg.className="msg bad";msg.textContent="Speichern fehlgeschlagen: "+e.message;f.querySelectorAll("button").forEach(x=>x.disabled=false)}
+}
+
+document.addEventListener("click",ev=>{
+  const t=ev.target;
+  if(t.id==="logout"){speicher.del();setEdit(false);toast("Abgemeldet.");return}
+  if(t.id==="neubtn"){offen={typ:"neu"};render();return}
+  const act=t.dataset&&t.dataset.act;
+  if(act==="abbrechen"){offen=null;render();return}
+  if(act==="loeschen"){
+    if(!t.classList.contains("confirm")){t.classList.add("confirm");t.textContent="Wirklich löschen?";return}
+    const f=t.closest("form");
+    senden({aktion:"loeschen",alt:data.spiele[+f.dataset.idx]},f,t,"Spiel gelöscht.");return;
+  }
+  if(!editMode||!speicher.get())return;
+  const li=t.closest("li.item");
+  if(!li)return;
+  if(li.dataset.idx!=null){offen={typ:"spiel",idx:+li.dataset.idx};render()}
+  else if(li.dataset.frei){offen={typ:"neu",datum:li.dataset.frei};render()}
+});
 
 document.querySelectorAll(".filter button").forEach(b=>b.onclick=()=>{
   filter=b.dataset.f;
@@ -98,13 +313,22 @@ document.querySelectorAll(".filter button").forEach(b=>b.onclick=()=>{
   render();
 });
 
-fetch("spiele.json?v="+Date.now()).then(r=>r.json()).then(d=>{
+function updateTexte(){
+  $("title").textContent=`Spielplan ${data.team}`;
+  $("sub").textContent=`${data.verein} · Saison bis ${dm(parse(data.bis))}${parse(data.bis).getFullYear()}`;
+  $("note").textContent=`Heimspiele: ${data.heimspielort}. Stand: ${data.stand}. Termine ohne Gewähr – maßgeblich ist fussball.de.`;
+}
+
+// Vorschläge für das Feld "Wettbewerb"
+const dl=document.createElement("datalist");dl.id="wettbewerbe";
+dl.innerHTML=WETTBEWERBE.map(w=>`<option value="${w}">`).join("");document.body.appendChild(dl);
+
+fetch("spiele.json?v="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(d=>{
   data=d;
-  document.getElementById("title").textContent=`Spielplan ${d.team}`;
-  document.getElementById("sub").textContent=`${d.verein} · Saison bis ${dm(parse(d.bis))}${parse(d.bis).getFullYear()}`;
-  document.getElementById("note").textContent=`Heimspiele: ${d.heimspielort}. Stand: ${d.stand}. Termine ohne Gewähr – maßgeblich ist fussball.de.`;
+  updateTexte();
+  if(d.bearbeiten_api)$("editbtn").classList.add("show");
   render();
-}).catch(()=>{document.getElementById("list").innerHTML='<div class="err">Die Termine konnten nicht geladen werden.</div>'});
+}).catch(()=>{$("list").innerHTML='<div class="err">Die Termine konnten nicht geladen werden.</div>'});
 </script>
 </body>
 </html>

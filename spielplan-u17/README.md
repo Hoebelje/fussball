@@ -4,7 +4,16 @@ Die Seite zeigt alle Wochenenden der Saison. Wochenenden ohne Spiel erscheinen a
 
 Adresse: https://hoebelje.github.io/fussball/spielplan-u17/
 
-## Termine bearbeiten
+## Termine direkt auf der Seite bearbeiten
+
+Oben rechts auf dem Spielplan gibt es den Button **Bearbeiten** (nach einmaliger Einrichtung, siehe
+[`apps-script/EINRICHTUNG.md`](apps-script/EINRICHTUNG.md)). Nach Eingabe des Bearbeitungs-Passworts:
+
+- Termin antippen → ändern oder löschen
+- „spielfrei“-Wochenende antippen → dort ein Spiel eintragen
+- **+ Spiel hinzufügen** → Spiel an beliebigem Datum anlegen
+
+## Termine in der Datei bearbeiten
 
 Alle Termine stehen in **`spiele.json`**. Die Seite selbst (`index.html`) musst du nicht anfassen.
 
@@ -28,5 +37,6 @@ Alle Termine stehen in **`spiele.json`**. Die Seite selbst (`index.html`) musst 
 - `von` / `bis`: Zeitraum, für den Wochenenden angezeigt werden (z. B. Saisonende).
 - `stand`: Datum, das unter der Liste als „Stand“ angezeigt wird.
 - `team`, `verein`, `heimspielort`: Texte für Überschrift und Hinweis.
+- `bearbeiten_api`: Web-App-URL des Apps Scripts. Leer lassen, um den Bearbeiten-Button auszublenden.
 
 Wenn nach einer Änderung „Die Termine konnten nicht geladen werden“ erscheint, fehlt meist ein Komma oder eine Anführungszeichen. Prüfen kannst du die Datei z. B. auf https://jsonlint.com.
