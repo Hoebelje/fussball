@@ -32,7 +32,8 @@ li.past{opacity:.5}
 .editing li.item{cursor:pointer}
 .editing li.item:hover{border-color:var(--accent)}
 .editing li.item .match::after{content:" ✎";font-weight:400;color:var(--accent);font-size:13px}
-.editing li.free .match::after{content:" + Spiel eintragen";color:var(--accent);font-size:13px}
+.editing li.free .match{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.editing li.free .match::after{content:"+ Spiel eintragen";color:var(--accent);font-size:13px;font-weight:400;white-space:nowrap;padding-right:4px}
 .we{font-size:13px;font-weight:600;color:var(--muted);grid-row:span 2}
 .we .kw{display:block;font-size:11px;font-weight:500;color:var(--faint);margin-top:2px}
 .match{font-size:15px;font-weight:600;line-height:1.35}
