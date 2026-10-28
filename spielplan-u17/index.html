@@ -7,6 +7,7 @@
 <style>
 :root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;--home:#E8F5EC;--homeline:#1E8E3E;--danger:#C5221F;color-scheme:light}
 *{box-sizing:border-box}
+html,body{overflow:hidden} /* nicht scrollbar: Seite steckt in Wix in einem langen Frame */
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
 .app{max-width:680px;margin:0 auto;padding:16px 12px 24px}
@@ -133,7 +134,6 @@ let sessionPw="";
 
 /* ---------- Anzeige ---------- */
 const istAbgesetzt=g=>!!(g.spielnr&&g.status==="abgesetzt");
-let ersterAufbau=true;
 
 function render(){
   const byDate={};
@@ -204,20 +204,6 @@ function render(){
     }
   }
   $("list").innerHTML=html||"<p class='sub'>Keine Einträge.</p>";
-  if(editMode&&offen){const f=document.querySelector("form.edit");if(f){f.scrollIntoView({block:"nearest"});}}
-  if(ersterAufbau){ersterAufbau=false;zumAktuellenDatum()}
-}
-
-/* Beim Start zum aktuellen bzw. nächsten Wochenende scrollen (nur innerhalb dieser Seite) */
-function zumAktuellenDatum(){
-  const el=document.querySelector("[data-jetzt]");
-  if(!el)return;
-  let ziel=el;
-  const ul=el.parentElement;
-  if(ul&&ul.firstElementChild===el&&ul.previousElementSibling&&ul.previousElementSibling.tagName==="H2")ziel=ul.previousElementSibling;
-  if(ziel===document.querySelector("#list h2"))return; // aktuelles Wochenende ist ohnehin das erste
-  const top=ziel.getBoundingClientRect().top+window.scrollY-8;
-  if(top>40)window.scrollTo(0,top);
 }
 
 function aenderungsText(g){
