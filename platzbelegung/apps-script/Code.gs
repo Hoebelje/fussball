@@ -40,20 +40,21 @@ const VORLAUF_MIN = 0;           // Termin beginnt genau mit dem Anpfiff
 // Mannschaftsart auf fussball.de -> Teamkürzel (für SV Agrippina), Spieldauer in Minuten, Platzanteil
 // Reihenfolge wichtig: das erste passende Muster gilt.
 const MANNSCHAFTEN = [
-  { muster: /A-Juniorinnen/i,      team: "U19 (W)", dauer: 105, ort: "" },
-  { muster: /B-Juniorinnen/i,      team: "U17 (W)", dauer: 95,  ort: "" },
-  { muster: /C-Juniorinnen/i,      team: "U15 (W)", dauer: 80,  ort: "" },
-  { muster: /D-Juniorinnen/i,      team: "U13 (W)", dauer: 70,  ort: "1/2 Platz" },
-  { muster: /A-Junioren/i,         team: "U19 (M)", dauer: 105, ort: "" },
-  { muster: /Frauen/i,             team: "Frauen",  dauer: 105, ort: "" },
-  { muster: /Herren.*(II|2)\b/i,   team: "Herren 2", dauer: 105, ort: "" },
-  { muster: /Herren/i,             team: "Herren 1", dauer: 105, ort: "" },
-  { muster: /B-Junior/i,           team: "",        dauer: 95,  ort: "" },
-  { muster: /C-Junior/i,           team: "",        dauer: 80,  ort: "" },
-  { muster: /[FG]-Junior|Bambini/i, team: "",       dauer: 120, ort: "1/4 Platz" },
-  { muster: /Kinderfestival/i,     team: "",        dauer: 120, ort: "1/2 Platz" },
-  { muster: /[DE]-Junior/i,        team: "",        dauer: 70,  ort: "1/2 Platz" },
-  { muster: /.*/,                  team: "",        dauer: 105, ort: "" }
+  // Spieldauer = offizielle Spielzeit + Halbzeitpause (ohne Verlängerung)
+  { muster: /A-Juniorinnen/i,       team: "U19 (W)",  dauer: 105, ort: "" },          // 2×45 + 15
+  { muster: /B-Juniorinnen/i,       team: "U17 (W)",  dauer: 95,  ort: "" },          // 2×40 + 15
+  { muster: /C-Juniorinnen/i,       team: "U15 (W)",  dauer: 85,  ort: "" },          // 2×35 + 15
+  { muster: /D-Juniorinnen/i,       team: "U13 (W)",  dauer: 75,  ort: "1/2 Platz" }, // 2×30 + 15
+  { muster: /A-Junioren/i,          team: "U19 (M)",  dauer: 105, ort: "" },
+  { muster: /Frauen/i,              team: "Frauen",   dauer: 105, ort: "" },          // 2×45 + 15
+  { muster: /Herren.*(II|2)\b/i,    team: "Herren 2", dauer: 105, ort: "" },
+  { muster: /Herren/i,              team: "Herren 1", dauer: 105, ort: "" },          // 2×45 + 15
+  { muster: /B-Junior/i,            team: "",         dauer: 95,  ort: "" },
+  { muster: /C-Junior/i,            team: "",         dauer: 85,  ort: "" },
+  { muster: /D-Junior/i,            team: "",         dauer: 75,  ort: "1/2 Platz" },
+  { muster: /[FG]-Junior|Bambini/i, team: "",         dauer: 57,  ort: "1/4 Platz" }, // Festival 6×7 + 5×3 Pause
+  { muster: /E-Junior|Kinderfestival/i, team: "",     dauer: 63,  ort: "1/2 Platz" }, // Festival 6×8 + 5×3 Pause
+  { muster: /.*/,                   team: "",         dauer: 105, ort: "" }
 ];
 
 /* ================================================================= */
