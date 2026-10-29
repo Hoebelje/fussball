@@ -476,7 +476,7 @@ async function render(){
   const mon = monday(selected);
   const today = startOfDay(new Date());
   const sun = addDays(mon,6);
-  $("weeklabel").textContent = dm(mon) + " – " + dm(sun) + sun.getFullYear() + " ";
+  $("weeklabel").textContent = dm(mon) + " – " + dm(sun) + " ";
   const kwEl = document.createElement("span"); kwEl.className = "kw"; kwEl.textContent = "(KW " + kw(mon) + ")";
   $("weeklabel").appendChild(kwEl);
 
