@@ -46,6 +46,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dot.on i{width:20px;background:var(--accent)}
 .dots .lbl{font-size:12px;color:var(--muted);margin-left:4px;min-width:52px}
 .narrow .ev{font-size:11px}
+.loading{position:absolute;left:30px;right:0;top:46px;bottom:0;background:rgba(255,255,255,.55);display:flex;justify-content:center;align-items:flex-start;padding-top:24px;opacity:0;visibility:hidden;transition:opacity .2s;z-index:7}
+.loading.on{opacity:1;visibility:visible}
+.loading.err{background:transparent;pointer-events:none}
+.lpill{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;color:var(--muted);box-shadow:0 4px 14px rgba(20,33,61,.12);max-width:calc(100% - 24px)}
+.loading.err .lpill{color:var(--now);border-color:#F3C2BE;border-radius:12px;pointer-events:auto}
+.spin{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:sp .8s linear infinite}
+.loading.err .spin{display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2.4s}}
 .allday{display:flex;flex-direction:column;gap:4px;margin-bottom:8px}
 .allday div{background:#fff4e0;color:#6b3d00;border:1px solid #f0c98a;border-radius:8px;padding:6px 10px;font-size:12px}
 .vp{overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;border-bottom:1px solid var(--line);-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
@@ -114,6 +123,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <div class="brow"><div class="times" id="times"></div><div class="carea" id="carea"></div></div>
     </div>
     <div class="fade" id="fade"></div>
+    <div class="loading" id="loading" aria-live="polite"><div class="lpill"><span class="spin" id="lspin" aria-hidden="true"></span><span id="ltext">Termine werden geladen …</span></div></div>
   </div>
   <div class="dots" id="dots" aria-label="Flächen"></div>
   <p class="hint" id="hint">Wischen ↕ ↔ für mehr · Termin antippen für Details</p>
@@ -438,7 +448,7 @@ let rt = 0;
 window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (layout()) render(); else updateJumps(); }, 120); });
 
 /* ---------- Rendern ---------- */
-let renderToken = 0;
+let renderToken = 0, loadTimer = 0;
 async function render(){
   const token = ++renderToken;
   const mon = monday(selected);
@@ -463,18 +473,32 @@ async function render(){
   drawBackground();
   $("allday").innerHTML = "";
   $("status").className = "status";
-  $("status").textContent = DEMO ? "Demo-Daten – Web-App-URL in den Einstellungen eintragen." : "Lädt …";
+  $("status").textContent = DEMO ? "Demo-Daten – Web-App-URL in den Einstellungen eintragen." : "";
+
+  // Lade-Hinweis oben im Raster, erst nach 0,3 s (kein Flackern bei schneller Antwort)
+  const ld = $("loading");
+  clearTimeout(loadTimer);
+  ld.classList.remove("on", "err");
+  $("loading").style.left = TW + "px";
+  if (!cache[key(mon)]) loadTimer = setTimeout(() => {
+    if (token !== renderToken) return;
+    $("ltext").textContent = "Termine werden geladen …";
+    ld.classList.add("on");
+  }, 300);
 
   let events;
   try { events = await loadWeek(mon); }
   catch(err){
     if (token!==renderToken) return;
-    $("status").className = "status err";
-    $("status").textContent = "Belegung konnte nicht geladen werden: " + err.message;
+    clearTimeout(loadTimer);
+    $("ltext").textContent = "Belegung konnte nicht geladen werden. Bitte später erneut versuchen.";
+    ld.classList.add("on", "err");
+    console.warn("Platzbelegung:", err);
     return;
   }
   if (token!==renderToken) return;
-  if (!DEMO) $("status").textContent = "";
+  clearTimeout(loadTimer);
+  ld.classList.remove("on");
 
   const dayStart = startOfDay(selected), dayEnd = addDays(dayStart,1);
   events.filter(e => e.allDay && e.start < dayEnd && e.end > dayStart).forEach(e => {
