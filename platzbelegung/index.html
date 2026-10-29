@@ -363,7 +363,7 @@ function setHours(){
   $("times").style.height = carea.style.height = (E-S)*H + "px";
   carea.style.setProperty("--h", H+"px");
   $("times").innerHTML = "";
-  for (let h=S; h<=E; h++){ const s=document.createElement("span"); s.style.top=((h-S)*H - (h===E ? 12 : 0))+"px"; s.textContent=h; $("times").appendChild(s); }
+  for (let h=S; h<E; h++){ const s=document.createElement("span"); s.style.top=(h-S)*H+"px"; s.textContent=h; $("times").appendChild(s); }
 }
 // Stundenhöhe so wählen, dass S bis E genau in die Höhe des Fensters/Rahmens passt
 function fitHours(){
