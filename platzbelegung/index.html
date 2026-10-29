@@ -142,7 +142,7 @@ html.embedded,html.embedded body{height:100%;overflow:hidden}
 <div class="backdrop" id="backdrop"></div>
 <div class="infopop" id="infopop" role="dialog" aria-modal="true" aria-labelledby="ip-title">
   <div class="ih"><h2 id="ip-title">So entsteht die Platzbelegung</h2><button class="iconbtn" id="ip-close" aria-label="Schließen">×</button></div>
-  <p><b>Spieltermine</b> (gestrichelt) kommen von fussball.de und werden 1× täglich nachts synchronisiert.</p>
+  <p><b>Spieltermine</b> (schraffiert) kommen von fussball.de und werden 1× täglich nachts synchronisiert.</p>
   <p><b>Trainingszeiten</b> (volle Flächen) werden manuell eingetragen.</p>
   <p><b>Spieldauer:</b> Spielzeit + Halbzeitpause.</p>
   <table>
@@ -612,6 +612,20 @@ function segments(g){
 }
 
 /* ---------- Blöcke zeichnen ---------- */
+// Spieltermine (von fussball.de oder mit "Spiel" im Titel) werden schraffiert dargestellt
+function istSpiel(e){
+  return /fussball\.de/i.test(e.desc || "") || /\b(Heimspiel|Testspiel|Spiel|Kinderfestival|Turnier)\b/i.test(e.title || "");
+}
+function mischen(a, b, anteil){
+  const h = x => [1,3,5].map(i => parseInt(x.slice(i, i+2), 16));
+  const A = h(a), B = h(b);
+  return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * anteil).toString(16).padStart(2, "0")).join("");
+}
+function schraffur(bg, fg){
+  if (!/^#[0-9a-f]{6}$/i.test(bg) || !/^#[0-9a-f]{6}$/i.test(fg)) return bg;
+  const streifen = mischen(bg, fg, 0.12);
+  return "repeating-linear-gradient(135deg," + bg + " 0 6px," + streifen + " 6px 9px)";
+}
 function place(btn, c0, c1, a, b, lane, lanes, bare){
   const x0 = COLS[c0].x, w = COLS[c1].x + CW - x0;
   btn.style.left = (x0 + lane*w/lanes + 2) + "px";
@@ -625,9 +639,10 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b, bare){
   a = a ?? bl.a; b = b ?? bl.b;
   const e = bl.e, t = teamOf(e.title);
   const btn = document.createElement("button");
-  btn.className = "ev" + (e.series ? "" : " single");
+  const spiel = istSpiel(e);
+  btn.className = "ev" + (spiel ? " spiel" : (e.series ? "" : " single"));
   place(btn, c0, c1, a, b, lane, lanes, bare);
-  btn.style.background = t.bg; btn.style.color = t.fg;
+  btn.style.background = spiel ? schraffur(t.bg, t.fg) : t.bg; btn.style.color = t.fg;
   if (bare){
     // Teilstück eines Termins (z. B. während einer kurzen Überschneidung): ohne Text
     btn.style.padding = "0"; btn.style.borderRadius = "3px";
