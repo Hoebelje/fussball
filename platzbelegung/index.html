@@ -52,7 +52,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dot.on i{width:20px;background:var(--accent)}
 .dots .lbl{font-size:12px;color:var(--muted);margin-left:4px;min-width:52px}
 .narrow .ev{font-size:11px}
-.loading{position:absolute;left:30px;right:0;top:46px;bottom:0;background:rgba(255,255,255,.55);display:flex;justify-content:center;align-items:flex-start;padding-top:24px;opacity:0;visibility:hidden;transition:opacity .2s;z-index:7}
+.loading{position:absolute;left:30px;right:0;top:var(--head,46px);bottom:0;background:rgba(255,255,255,.55);display:flex;justify-content:center;align-items:flex-start;padding-top:24px;opacity:0;visibility:hidden;transition:opacity .2s;z-index:7}
 .loading.on{opacity:1;visibility:visible}
 .loading.err{background:transparent;pointer-events:none}
 .lpill{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:8px 16px;font-size:13px;color:var(--muted);box-shadow:0 4px 14px rgba(20,33,61,.12);max-width:calc(100% - 24px)}
@@ -188,7 +188,7 @@ const CONFIG = {
   // Ort leer = ganzer Platz. Die Seite verteilt die Teams automatisch.
   areas: [
     { label: "Platz",  calendar: "Platz",  quarters: 4 },
-    { label: "Boxen",  columns: [ { calendar: "Box 1", label: "Box 1" }, { calendar: "Box 2", label: "Box 2" } ] },
+    { label: "Boxen",  columns: [ { calendar: "Box 1", label: "" }, { calendar: "Box 2", label: "" } ] },
     { label: "Weiden", columns: [ { calendar: "Weiden", label: "" } ] }
   ],
   colWidth: 80,         // Breite einer Spalte in px
@@ -362,7 +362,9 @@ async function loadWeek(mon){
 }
 
 /* ---------- Aufbau ---------- */
-const HEAD = 46;
+// Kopfhöhe über dem Raster: kleiner, wenn keine Spalte eine eigene Beschriftung hat
+const HEAD = CONFIG.areas.some(a => (a.columns || []).some(c => c.label)) ? 46 : 28;
+document.documentElement.style.setProperty("--head", HEAD + "px");
 let S = CONFIG.startHour, E = CONFIG.endHour, H = 40;
 const vp = $("vp"), carea = $("carea"), harea = $("harea");
 $("corner").style.height = HEAD + "px";
