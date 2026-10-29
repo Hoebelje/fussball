@@ -73,6 +73,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ev{position:absolute;border:none;border-radius:6px;padding:4px 6px;font-size:12px;font-weight:600;text-align:left;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;line-height:1.25;z-index:1}
 .ev small{font-weight:400;font-size:11px;opacity:.85;white-space:nowrap}
 .ev small.team{font-weight:600;opacity:1}
+.ev.flat{display:block;white-space:nowrap;text-overflow:ellipsis;padding-top:2px;padding-bottom:0}
 .ev:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .ev.single{outline:1.5px dashed currentColor;outline-offset:-2px}
 .ev.multi{background:var(--bg);border:1px solid var(--strong);color:var(--ink);padding:3px;gap:1px}
@@ -177,11 +178,12 @@ const CONFIG = {
   colWidth: 80,         // Breite einer Spalte in px
   areaGap: 12,          // Abstand zwischen den Flächen
 
-  startHour: 8,         // frühester Zeitpunkt im Raster
-  endHour: 22,          // spätester Zeitpunkt im Raster
+  startHour: 9,         // Raster beginnt um (früher, falls an dem Tag ein Termin früher liegt)
+  endHour: 21,          // Raster endet um (später, falls an dem Tag ein Termin länger dauert)
   // Der ganze Zeitraum ist immer sichtbar (kein Scrollen im Raster).
-  hourPxMobile: 44,     // Höhe einer Stunde auf dem Handy
-  hourPxDesktop: 52,    // Höhe einer Stunde ab 600 px Breite
+  // Die Stundenhöhe passt sich der Höhe des Rahmens an, damit der ganze Tag auf einen Bildschirm passt.
+  hourPxMin: 30,        // kleinste Stundenhöhe
+  hourPxMax: 64,        // größte Stundenhöhe
 
   // Termin-Titel beginnt mit dem Kürzel, z. B. "U17 (W)" oder "U17 (W) Training".
   // short = Beschriftung im Raster.
@@ -340,8 +342,8 @@ async function loadWeek(mon){
 }
 
 /* ---------- Aufbau ---------- */
-const S = CONFIG.startHour, E = CONFIG.endHour, HEAD = 46;
-let H = CONFIG.hourPxMobile;
+const HEAD = 46;
+let S = CONFIG.startHour, E = CONFIG.endHour, H = 40;
 const vp = $("vp"), carea = $("carea"), harea = $("harea");
 $("corner").style.height = HEAD + "px";
 harea.style.height = HEAD + "px";
@@ -350,17 +352,24 @@ function setHours(){
   $("times").style.height = carea.style.height = (E-S)*H + "px";
   carea.style.setProperty("--h", H+"px");
   $("times").innerHTML = "";
-  for (let h=S; h<E; h++){ const s=document.createElement("span"); s.style.top=(h-S)*H+"px"; s.textContent=h; $("times").appendChild(s); }
+  for (let h=S; h<=E; h++){ const s=document.createElement("span"); s.style.top=((h-S)*H - (h===E ? 12 : 0))+"px"; s.textContent=h; $("times").appendChild(s); }
+}
+// Stundenhöhe so wählen, dass S bis E genau in die Höhe des Fensters/Rahmens passt
+function fitHours(){
+  const top = vp.getBoundingClientRect().top + scrollY;
+  const unten = 44;   // Punkte unter dem Raster
+  const avail = innerHeight - top - HEAD - 10 - unten;
+  H = Math.max(CONFIG.hourPxMin, Math.min(CONFIG.hourPxMax, Math.floor(avail / (E - S))));
+  setHours();
 }
 
 // Spaltenbreite so wählen, dass die erste Fläche (Platz) immer ganz zu sehen ist
 let lastW = 0;
 function layout(){
-  const w = vp.clientWidth; if (!w || w === lastW) return false;
-  lastW = w;
+  const w = vp.clientWidth, groesse = w + "x" + innerHeight; if (!w || groesse === lastW) return false;
+  lastW = groesse;
   TW = w < 400 ? 24 : 30;
-  H = w >= 600 ? CONFIG.hourPxDesktop : CONFIG.hourPxMobile;
-  setHours();
+  fitHours();
   const first = CONFIG.areas[0];
   const n = first.quarters || (first.columns || []).length || 1;
   // Passt alles nebeneinander (Desktop)? Sonst Platz ganz zeigen und die nächste Fläche rechts anschneiden.
@@ -470,6 +479,7 @@ async function render(){
     days.appendChild(b);
   }
 
+  fitHours();          // Kopfzeile steht jetzt, Höhe neu berechnen
   drawBackground();
   $("allday").innerHTML = "";
   $("status").className = "status";
@@ -499,6 +509,15 @@ async function render(){
   if (token!==renderToken) return;
   clearTimeout(loadTimer);
   ld.classList.remove("on");
+
+  // Zeitraum des Tages: Standard 9–21 Uhr, erweitert falls ein Termin früher beginnt oder später endet
+  {
+    const tag = events.filter(e => !e.allDay && sameDay(e.start, selected));
+    let ns = CONFIG.startHour, ne = CONFIG.endHour;
+    tag.forEach(e => { ns = Math.min(ns, Math.floor(hours(e.start))); ne = Math.max(ne, sameDay(e.end, e.start) ? Math.ceil(hours(e.end)) : 24); });
+    ns = Math.max(0, ns); ne = Math.min(24, ne);
+    if (ns !== S || ne !== E){ S = ns; E = ne; fitHours(); drawBackground(); }
+  }
 
   const dayStart = startOfDay(selected), dayEnd = addDays(dayStart,1);
   events.filter(e => e.allDay && e.start < dayEnd && e.end > dayStart).forEach(e => {
@@ -609,6 +628,15 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b, bare){
   const head = (e.title||"").split(/\s+–\s+|\s+(?=(Heimspiel|Kinderfestival|Training|Testspiel|Spiel)\b)/i)[0].trim();
   const extra = norm(head).startsWith(norm(t.key)) && norm(head).length > norm(t.key).length ? head.slice(t.key.length).trim() : "";
   btn.setAttribute("aria-label", (t.club ? t.club+" "+t.name : (extra ? t.key+" "+extra : t.name))+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
+  // Flacher Block: Team und Anpfiff in einer Zeile
+  if ((b-a)*H - 4 < 32){
+    const name = wide ? (t.club ? t.club + " " + t.name : (extra ? t.key + " " + extra : t.name)) : (t.club ? t.short : (extra ? t.key + " " + extra : t.short));
+    btn.classList.add("flat");
+    btn.textContent = name + " · " + hm(e.start);
+    btn.onclick = () => openSheet(bl, t);
+    layer.appendChild(btn);
+    return;
+  }
   // Eigene Teams: "Agrippina U15 (W)", schmal: "Agrippina" + Zeile "U15 W"
   const sub = t.club ? t.short : extra;
   btn.append(wide ? (t.club ? t.club + " " + t.name : (extra ? t.key + " " + extra : t.name)) : (t.club || t.short));
