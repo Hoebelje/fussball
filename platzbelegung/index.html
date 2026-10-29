@@ -393,26 +393,43 @@ function drawBackground(){
 }
 const nowLine = document.createElement("div"); nowLine.className = "now";
 
-// Punkte unter dem Raster: zeigen die aktuelle Fläche, antippen springt dorthin
-const jumpBtns = CONFIG.areas.map((a, i) => {
-  const b = document.createElement("button"); b.className = "dot";
-  b.setAttribute("aria-label", a.label); b.innerHTML = "<i></i>";
-  b.onclick = () => { picked = i; vp.scrollTo({ left: AREAS[i].x, behavior: "smooth" }); };
-  $("dots").appendChild(b); return b;
-});
-const dotLabel = document.createElement("span"); dotLabel.className = "lbl"; $("dots").appendChild(dotLabel);
-let picked = null;
-vp.addEventListener("touchstart", () => { picked = null; }, { passive:true });
-vp.addEventListener("wheel", () => { picked = null; }, { passive:true });
+// Punkte unter dem Raster: ein Punkt pro erreichbarer Wischposition.
+// Beschriftung = die Flächen, die an dieser Position zu sehen sind (z. B. "Boxen · Weiden").
+let pages = [], pagesKey = "";
+const dotLabel = document.createElement("span"); dotLabel.className = "lbl";
+function buildPages(){
+  const max = Math.max(0, vp.scrollWidth - vp.clientWidth), sichtbar = vp.clientWidth - TW;
+  const pos = [];
+  AREAS.forEach(a => { const p = Math.min(a.x, max); if (!pos.some(q => Math.abs(q - p) < 6)) pos.push(p); });
+  pos.sort((a,b) => a-b);
+  pages = pos.map(p => ({
+    x: p,
+    label: AREAS.filter(a => {
+      const vis = Math.min(a.x + a.w, p + sichtbar) - Math.max(a.x, p);
+      return vis >= Math.min(a.w, sichtbar) * 0.6;
+    }).map(a => a.label).join(" · ")
+  }));
+  const k = pages.map(p => p.x + p.label).join("|");
+  if (k === pagesKey) return;
+  pagesKey = k;
+  $("dots").innerHTML = "";
+  pages.forEach((pg, i) => {
+    const b = document.createElement("button"); b.className = "dot";
+    b.setAttribute("aria-label", pg.label); b.innerHTML = "<i></i>";
+    b.onclick = () => vp.scrollTo({ left: pg.x, behavior: "smooth" });
+    $("dots").appendChild(b);
+  });
+  $("dots").appendChild(dotLabel);
+}
 function updateJumps(){
-  const x = vp.scrollLeft + 20;
-  let cur = 0; AREAS.forEach((a,i) => { if (x >= a.x) cur = i; });
-  if (vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4) cur = picked ?? AREAS.length-1;
-  jumpBtns.forEach((b,i) => { b.classList.toggle("on", i===cur); b.setAttribute("aria-pressed", i===cur); });
-  dotLabel.textContent = AREAS[cur] ? AREAS[cur].label : "";
+  buildPages();
+  let cur = 0, best = Infinity;
+  pages.forEach((pg, i) => { const d = Math.abs(vp.scrollLeft - pg.x); if (d < best){ best = d; cur = i; } });
+  [...$("dots").querySelectorAll(".dot")].forEach((b,i) => { b.classList.toggle("on", i===cur); b.setAttribute("aria-pressed", i===cur); });
+  dotLabel.textContent = pages[cur] ? pages[cur].label : "";
   const fits = vp.scrollWidth <= vp.clientWidth + 2;
   const amEnde = vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4;
-  $("dots").style.display = fits ? "none" : "flex";
+  $("dots").style.display = (fits || pages.length < 2) ? "none" : "flex";
   $("fade").style.opacity = (fits || amEnde) ? 0 : 1;
   $("hint").textContent = fits ? "Termin antippen für Details" : "Wischen ↔ für weitere Flächen · Termin antippen für Details";
 }
