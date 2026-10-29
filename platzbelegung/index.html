@@ -732,14 +732,14 @@ function spieldauer(e){
   const t = e.title || "", u = t.match(/\bU\s?(\d{1,2})\b/i);
   if (u){
     const n = +u[1];
-    if (n >= 18) return "2×45 + 15 = 105 Min";
-    if (n >= 16) return "2×40 + 15 = 95 Min";
-    if (n >= 14) return "2×35 + 15 = 85 Min";
-    if (n >= 12) return "2×30 + 15 = 75 Min";
-    if (n >= 10) return "6×8 + 5×3 = 63 Min (Festival)";
-    return "6×7 + 5×3 = 57 Min (Festival)";
+    if (n >= 18) return "2×45 Min + 15 Min Pause = 105 Min";
+    if (n >= 16) return "2×40 Min + 15 Min Pause = 95 Min";
+    if (n >= 14) return "2×35 Min + 15 Min Pause = 85 Min";
+    if (n >= 12) return "2×30 Min + 15 Min Pause = 75 Min";
+    if (n >= 10) return "6×8 Min + 5×3 Min Pause = 63 Min (Festival)";
+    return "6×7 Min + 5×3 Min Pause = 57 Min (Festival)";
   }
-  if (/Herren|Frauen/i.test(t)) return "2×45 + 15 = 105 Min";
+  if (/Herren|Frauen/i.test(t)) return "2×45 Min + 15 Min Pause = 105 Min";
   return "";
 }
 
