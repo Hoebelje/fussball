@@ -619,6 +619,23 @@ function drawSeg(s, c){
 }
 
 /* ---------- Detail-Panel ---------- */
+// Offizielle Spieldauer für Spiele von fussball.de (aus Altersklasse im Titel)
+function spieldauer(e){
+  if (!/fussball\.de/i.test(e.desc || "")) return "";
+  const t = e.title || "", u = t.match(/\bU\s?(\d{1,2})\b/i);
+  if (u){
+    const n = +u[1];
+    if (n >= 18) return "2×45 + 15 = 105 Min";
+    if (n >= 16) return "2×40 + 15 = 95 Min";
+    if (n >= 14) return "2×35 + 15 = 85 Min";
+    if (n >= 12) return "2×30 + 15 = 75 Min";
+    if (n >= 10) return "6×8 + 5×3 = 63 Min (Festival)";
+    return "6×7 + 5×3 = 57 Min (Festival)";
+  }
+  if (/Herren|Frauen/i.test(t)) return "2×45 + 15 = 105 Min";
+  return "";
+}
+
 function row(label, value){
   const d=document.createElement("div"), dt=document.createElement("dt"), dd=document.createElement("dd");
   dt.textContent=label; dd.textContent=value; d.append(dt,dd); return d;
@@ -653,9 +670,11 @@ function openSheet(bl, t){
   $("sh-title").textContent = rest ? nm + " · " + rest : nm;
   $("sh-kind").textContent = e.series ? "Serientermin" : "Einzeltermin";
   const rows = $("sh-rows"); rows.innerHTML = "";
-  rows.append(row("Fläche", e.cal + (bl.where ? " · " + bl.where : "")));
+  rows.append(row("Fläche", e.cal));
   if (bl.over) rows.append(row("Achtung", "Platz ist zu dieser Zeit überbucht"));
   rows.append(row("Wann", LONG[(e.start.getDay()+6)%7] + ", " + dm(e.start) + " · " + hm(e.start) + "–" + hm(e.end) + " Uhr"));
+  const sd = spieldauer(e);
+  if (sd) rows.append(row("Spieldauer", sd));
   if (e.desc) rows.append(row("Hinweis", e.desc));
   openPanel();
 }
