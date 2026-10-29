@@ -17,6 +17,7 @@ h1{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
 .infobtn svg{width:18px;height:18px}
 .infopop{position:absolute;top:0;right:8px;width:min(440px,calc(100% - 16px));background:var(--bg);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(20,33,61,.18);padding:14px 16px 16px;opacity:0;visibility:hidden;transition:opacity .15s;z-index:10;font-size:13px;line-height:1.5}
 .infopop.on{opacity:1;visibility:visible}
+.infopop,.sheet{max-height:calc(100vh - 16px);overflow:auto}
 .infopop h2{margin:0;font-size:16px;font-weight:700}
 .infopop .ih{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .infopop p{margin:0 0 8px}
@@ -86,6 +87,9 @@ button{font:inherit;color:inherit;cursor:pointer}
 .hint{margin:8px 0 0;font-size:11px;color:var(--faint);text-align:center}
 .legend{margin:4px 0 0;font-size:11px;color:var(--muted);text-align:center}
 .status{margin:8px 0 0;font-size:12px;color:var(--muted);text-align:center}
+.status:empty{display:none}
+/* Eingebettet (Wix): der Rahmen selbst scrollt nie, senkrechtes Wischen bewegt die Vereinsseite */
+html.embedded,html.embedded body{height:100%;overflow:hidden}
 .status.err{color:var(--now)}
 .backdrop{position:fixed;inset:0;background:rgba(20,33,61,.12);opacity:0;pointer-events:none;transition:opacity .15s;z-index:9}
 .backdrop.on{opacity:1;pointer-events:auto}
@@ -127,8 +131,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <div class="loading" id="loading" aria-live="polite"><div class="lpill"><span class="spin" id="lspin" aria-hidden="true"></span><span id="ltext">Termine werden geladen …</span></div></div>
   </div>
   <div class="dots" id="dots" aria-label="Flächen"></div>
-  <p class="hint" id="hint">Wischen ↕ ↔ für mehr · Termin antippen für Details</p>
-  <p class="legend">Volle Fläche = Serientermin · gestrichelt = Spiel oder Einzeltermin</p>
+  <p class="hint" id="hint" hidden></p>
   <p class="status" id="status" role="status"></p>
 </div>
 
@@ -204,6 +207,8 @@ const CONFIG = {
 };
 /* =================================================== */
 
+// In einem Rahmen (Wix)? Dann scrollt die Seite selbst nicht.
+try { if (window.self !== window.top) document.documentElement.classList.add("embedded"); } catch (e) { document.documentElement.classList.add("embedded"); }
 const DAYS = ["Mo","Di","Mi","Do","Fr","Sa","So"];
 const LONG = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","Sonntag"];
 const $ = id => document.getElementById(id);
@@ -357,7 +362,9 @@ function setHours(){
 // Stundenhöhe so wählen, dass S bis E genau in die Höhe des Fensters/Rahmens passt
 function fitHours(){
   const top = vp.getBoundingClientRect().top + scrollY;
-  const unten = 44;   // Punkte unter dem Raster
+  const app = document.querySelector(".app");
+  const punkte = (TW + CONTENT_W > vp.clientWidth + 2) ? 36 : 0;   // Punkte unter dem Raster (nur wenn gewischt werden kann)
+  const unten = punkte + parseFloat(getComputedStyle(app).paddingBottom || 0) + ($("status").textContent ? 30 : 0) + 2;
   const avail = innerHeight - top - HEAD - 10 - unten;
   H = Math.max(CONFIG.hourPxMin, Math.min(CONFIG.hourPxMax, Math.floor(avail / (E - S))));
   setHours();
@@ -450,7 +457,7 @@ function updateJumps(){
   const amEnde = vp.scrollLeft + vp.clientWidth >= vp.scrollWidth - 4;
   $("dots").style.display = (fits || pages.length < 2) ? "none" : "flex";
   $("fade").style.opacity = (fits || amEnde) ? 0 : 1;
-  $("hint").textContent = fits ? "Termin antippen für Details" : "Wischen ↔ für weitere Flächen · Termin antippen für Details";
+
 }
 vp.addEventListener("scroll", updateJumps, { passive:true });
 let rt = 0;
@@ -720,7 +727,7 @@ function openPanel(){
   if (x === null) { x = innerWidth/2 + scrollX; y = scrollY + 40; }
   sh.classList.add("on");
   const w = sh.offsetWidth, h = sh.offsetHeight;
-  const docW = document.documentElement.clientWidth, docH = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
+  const docW = document.documentElement.clientWidth, docH = Math.min(Math.max(document.documentElement.scrollHeight, document.body.scrollHeight), innerHeight + scrollY);
   let top = y + 14;
   if (top + h > docH - 8) top = y - h - 14;   // passt nicht darunter -> darüber
   top = Math.max(8, top);
@@ -771,8 +778,8 @@ function closeSheet(){
 $("sh-close").onclick = closeSheet;
 function openInfo(){
   const pop = $("infopop"), r = $("infobtn").getBoundingClientRect();
-  pop.style.top = (r.bottom + scrollY + 6) + "px";
   pop.classList.add("on");
+  pop.style.top = Math.max(8, Math.min(r.bottom + scrollY + 6, innerHeight + scrollY - pop.offsetHeight - 8)) + "px";
   const w = pop.offsetWidth, docW = document.documentElement.clientWidth;
   pop.style.right = "auto";
   pop.style.left = Math.max(8, Math.min(r.right + scrollX - w, docW - w - 8)) + "px"; $("backdrop").classList.add("on");
