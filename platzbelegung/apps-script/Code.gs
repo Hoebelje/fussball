@@ -202,7 +202,7 @@ function geplanteEintraege() {
     vereinsSpiele(v).forEach(function (s) {
       if (!s.heimspiel || s.abgesetzt || !s.zeit) return;
       if (SPIELSTAETTE && (s.ort || '').toLowerCase().indexOf(SPIELSTAETTE.toLowerCase()) < 0) return;
-      const m = MANNSCHAFTEN.filter(function (x) { return x.muster.test(s.mannschaft + ' ' + s.heim + ' ' + s.gast); })[0];
+      const m = MANNSCHAFTEN.filter(function (x) { return x.muster.test(s.mannschaft + ' ' + s.heim + (/kinderfestival/i.test(s.heim + ' ' + s.gast) ? ' Kinderfestival' : '')); })[0];
       const anpfiff = Utilities.parseDate(s.datum + ' ' + s.zeit, 'Europe/Berlin', 'yyyy-MM-dd HH:mm');
       const start = new Date(anpfiff.getTime() - VORLAUF_MIN * 60000);
       const ende = new Date(anpfiff.getTime() + m.dauer * 60000);
