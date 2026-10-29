@@ -631,7 +631,7 @@ function mischen(a, b, anteil){
 }
 function schraffur(bg, fg){
   if (!/^#[0-9a-f]{6}$/i.test(bg) || !/^#[0-9a-f]{6}$/i.test(fg)) return bg;
-  const streifen = mischen(bg, fg, 0.12);
+  const streifen = mischen(bg, fg, 0.102);   // Stärke der Streifen
   return "repeating-linear-gradient(135deg," + bg + " 0 6px," + streifen + " 6px 9px)";
 }
 function place(btn, c0, c1, a, b, lane, lanes, bare){
