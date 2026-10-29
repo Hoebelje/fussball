@@ -12,6 +12,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
 .club{margin:0;font-size:13px;color:var(--muted)}
 h1{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.topr{display:flex;align-items:center;gap:6px}
+.todaybtn{height:32px;padding:0 14px;border-radius:99px;border:1px solid var(--accent);background:var(--bg);color:var(--accent);font-size:13px;font-weight:600}
+.todaybtn:hover{background:var(--surface)}
+.todaybtn[hidden]{display:none}
 .infobtn{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 10px;margin-right:-10px;border:none;background:transparent;border-radius:10px;color:var(--accent);font-size:14px;font-weight:600}
 .infobtn:hover{background:var(--surface)}
 .infobtn svg{width:18px;height:18px}
@@ -115,9 +119,12 @@ html.embedded,html.embedded body{height:100%;overflow:hidden}
 <div class="app">
   <div class="top">
     <h1>Platzbelegung</h1>
-    <button class="infobtn" id="infobtn" aria-haspopup="dialog" aria-controls="infopop">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg>Infos
-    </button>
+    <div class="topr">
+      <button class="todaybtn" id="todaybtn" hidden>Heute</button>
+      <button class="infobtn" id="infobtn" aria-haspopup="dialog" aria-controls="infopop">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><circle cx="12" cy="7.8" r=".6" fill="currentColor"/></svg>Infos
+      </button>
+    </div>
   </div>
   <div class="weeknav">
     <button class="iconbtn" id="prev" aria-label="Vorherige Woche">‹</button>
@@ -480,6 +487,7 @@ async function render(){
   const kwEl = document.createElement("span"); kwEl.className = "kw"; kwEl.textContent = "(KW " + kw(mon) + ")";
   $("weeklabel").appendChild(kwEl);
 
+  $("todaybtn").hidden = sameDay(selected, today);
   const days = $("days"); days.innerHTML = "";
   for (let d=0; d<7; d++){
     const date = addDays(mon,d);
@@ -852,6 +860,7 @@ $("ip-close").onclick = closeInfo;
 $("backdrop").onclick = () => { if (!closeInfo()) closeSheet(); };
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !closeInfo()) closeSheet(); });
 
+$("todaybtn").onclick = () => { selected = startOfDay(new Date()); render(); };
 $("prev").onclick = () => { selected = addDays(selected,-7); render(); };
 $("next").onclick = () => { selected = addDays(selected, 7); render(); };
 
