@@ -111,7 +111,7 @@ html.embedded,html.embedded body{height:100%;overflow:hidden}
 .rows div{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
 .rows dt{width:70px;flex:none;color:var(--muted)}
 .rows dd{margin:0;white-space:pre-line}
-.src{margin:14px 0 0;font-size:12px;color:var(--muted)}
+.src{margin:14px 0 0;font-size:12px;color:var(--muted);white-space:pre-line;line-height:1.5}
 @media (max-width:420px){.app{padding:14px 8px 18px}.ev{padding:3px 4px}}
 </style>
 </head>
@@ -227,6 +227,7 @@ const LONG = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag","S
 const $ = id => document.getElementById(id);
 const DEMO = !CONFIG.scriptUrl;
 const cache = {};
+let letzterAbgleich = null;   // Zeitpunkt des letzten Abgleichs mit fussball.de (vom Apps Script)
 let selected = startOfDay(new Date());
 
 function startOfDay(d){ const x = new Date(d); x.setHours(0,0,0,0); return x; }
@@ -346,6 +347,7 @@ async function loadWeek(mon){
   if (!r.ok) throw new Error("Status " + r.status);
   const j = await r.json();
   if (j.error) throw new Error(j.error);
+  if (j.abgleich) letzterAbgleich = new Date(j.abgleich);
   const list = (j.events||[]).filter(e => CAL_NAMES.includes(e.cal)).map(e => ({
     cal: e.cal,
     title: e.title || "Belegt",
@@ -815,6 +817,8 @@ function openSheet(bl, t){
   const hinweis = (e.desc || "").replace(/\s*automatisch von fussball\.de übernommen\s*/i, "").trim();
   if (hinweis) rows.append(row("Hinweis", hinweis));
   $("sh-src").hidden = !vonFbde;
+  $("sh-src").textContent = "Daten von fussball.de" + (letzterAbgleich && !isNaN(letzterAbgleich)
+    ? "\nLetzter Abgleich: " + DAYS[(letzterAbgleich.getDay()+6)%7] + ", " + dm(letzterAbgleich) + ", " + hm(letzterAbgleich) + " Uhr" : "");
   openPanel();
 }
 function openMulti(s, c){

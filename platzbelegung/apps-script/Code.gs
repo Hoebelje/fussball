@@ -93,7 +93,7 @@ function doGet(e) {
     });
   });
 
-  const out = JSON.stringify({ events: events });
+  const out = JSON.stringify({ events: events, abgleich: PropertiesService.getScriptProperties().getProperty('LETZTER_ABGLEICH') || null });
   try { cache.put(cacheKey, out, CACHE_MINUTES * 60); } catch (err) {}
   return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
 }
@@ -182,6 +182,7 @@ function spieleAbgleichen() {
     // Nicht mehr vorhandene oder abgesetzte Spiele: Platz wieder freigeben
     Object.keys(vorhanden).forEach(function (nr) { vorhanden[nr].deleteEvent(); geloescht++; });
 
+    PropertiesService.getScriptProperties().setProperty('LETZTER_ABGLEICH', new Date().toISOString());
     Logger.log('Abgleich: ' + neu + ' neu, ' + geaendert + ' geändert, ' + geloescht + ' gelöscht (' + plan.length + ' Heimspiele).');
   } catch (err) {
     const text = 'Beim nächtlichen Abgleich der Platzbelegung mit fussball.de ist ein Fehler aufgetreten:\n\n'
