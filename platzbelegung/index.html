@@ -746,9 +746,9 @@ function openSheet(bl, t){
   $("sh-title").textContent = rest ? nm + " · " + rest : nm;
   $("sh-kind").textContent = e.series ? "Serientermin" : "Einzeltermin";
   const rows = $("sh-rows"); rows.innerHTML = "";
-  rows.append(row("Fläche", e.cal));
   if (bl.over) rows.append(row("Achtung", "Platz ist zu dieser Zeit überbucht"));
-  rows.append(row("Wann", LONG[(e.start.getDay()+6)%7] + ", " + dm(e.start) + " · " + hm(e.start) + "–" + hm(e.end) + " Uhr"));
+  rows.append(row("Datum", LONG[(e.start.getDay()+6)%7] + ", " + dm(e.start) + e.start.getFullYear()));
+  rows.append(row("Uhrzeit", hm(e.start) + "–" + hm(e.end) + " Uhr"));
   const sd = spieldauer(e);
   if (sd) rows.append(row("Spieldauer", sd));
   if (e.desc) rows.append(row("Hinweis", e.desc));
