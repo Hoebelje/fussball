@@ -19,6 +19,7 @@ h1{margin:0 0 4px;font-size:22px;font-weight:700;color:var(--accent)}
 .btns{display:flex;gap:8px;margin-top:12px}
 .btn{flex:1;text-align:center;text-decoration:none;font-size:14px;font-weight:600;height:40px;line-height:40px;border-radius:10px}
 .open{background:var(--accent);color:#fff}
+.single{flex:0 0 calc(50% - 4px)}
 .edit{border:1px solid var(--line);color:var(--accent)}
 .foot{margin-top:16px;font-size:12px;color:var(--faint)}
 .foot a{color:var(--accent)}
@@ -32,14 +33,14 @@ h1{margin:0 0 4px;font-size:22px;font-weight:700;color:var(--accent)}
   <h1>Agrippina – Seitenübersicht</h1>
   <p class="sub">Alle eingebetteten Seiten der Vereinswebsite</p>
 
-  <div class="card"><div class="head"><div class="ico"><img src="icons/spielplan-b.svg" alt="" width="40" height="40"></div><div><div class="t">Spielplan U17</div><div class="d">Alle Wochenenden mit Spielen und spielfreien Tagen</div></div></div>
-    <div class="btns"><a class="btn open" href="spielplan-u17/">Öffnen</a><a class="btn edit" href="https://github.com/Hoebelje/fussball/edit/main/spielplan-u17/spiele.json" target="_blank" rel="noopener">Termine bearbeiten</a></div></div>
+  <div class="card"><div class="head"><div class="ico"><img src="icons/spiele.svg" alt="" width="40" height="40"></div><div><div class="t">Alle Spiele</div><div class="d">Vereinsspielplan aller Teams von fussball.de</div></div></div>
+    <div class="btns"><a class="btn open single" href="alle-spiele.html">Öffnen</a></div></div>
 
   <div class="card"><div class="head"><div class="ico"><img src="icons/platzbelegung.svg" alt="" width="40" height="40"></div><div><div class="t">Platzbelegung</div><div class="d">Wochenansicht für Platz und Soccer-Boxen</div></div></div>
     <div class="btns"><a class="btn open" href="platzbelegung/">Öffnen</a><a class="btn edit" href="https://calendar.google.com/calendar/" target="_blank" rel="noopener">Kalender bearbeiten</a></div></div>
 
-  <div class="card"><div class="head"><div class="ico"><img src="icons/spiele.svg" alt="" width="40" height="40"></div><div><div class="t">Alle Spiele</div><div class="d">Vereinsspielplan aller Teams von fussball.de</div></div></div>
-    <div class="btns"><a class="btn open" href="alle-spiele.html">Öffnen</a></div></div>
+  <div class="card"><div class="head"><div class="ico"><img src="icons/spielplan-b.svg" alt="" width="40" height="40"></div><div><div class="t">Spielplan U17</div><div class="d">Alle Wochenenden mit Spielen und spielfreien Tagen</div></div></div>
+    <div class="btns"><a class="btn open" href="spielplan-u17/">Öffnen</a><a class="btn edit" href="https://github.com/Hoebelje/fussball/edit/main/spielplan-u17/spiele.json" target="_blank" rel="noopener">Termine bearbeiten</a></div></div>
 
   <div class="card"><div class="head"><div class="ico"><img src="icons/turnierplaner.svg" alt="" width="40" height="40"></div><div><div class="t">Turnierplaner</div><div class="d">Turniere anlegen, Spielplan und Tabelle</div></div></div>
     <div class="btns"><a class="btn open" href="https://hoebelje.github.io/turnierplaner/">Öffnen</a><a class="btn edit" href="https://github.com/Hoebelje/turnierplaner" target="_blank" rel="noopener">Bearbeiten</a></div></div>
