@@ -17,14 +17,21 @@ button{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border:0;bor
 button.sek{background:var(--surface);color:var(--accent)}
 button.x{background:none;color:#C5221F;padding:6px 8px}
 .login{max-width:320px;margin:50px auto;text-align:center}.login input{width:100%;margin:8px 0}.login button{width:100%}
-.zeile{display:grid;grid-template-columns:1fr 140px 62px 62px 30px;gap:6px;margin-bottom:6px;align-items:center}
+.zeile{display:grid;grid-template-columns:minmax(0,1fr) 150px 76px 76px 32px;gap:6px;margin-bottom:6px;align-items:center}
+.f{display:block;min-width:0}.f span{display:none}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-height:38px;background:#fff;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
 .zeile.kopf{font-size:12px;font-weight:700;color:var(--muted)}
 .zeile input{width:100%}
 .leiste{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
 .meldung{min-height:20px;font-size:14px}
 .ok{color:#137333}.fehler{color:#C5221F}
 details{margin-top:18px;font-size:14px;color:var(--muted)}details input{margin:6px 0;width:100%}
-@media(max-width:560px){.zeile{grid-template-columns:1fr 1fr 56px 56px 28px}.zeile .name{grid-column:1/-1}.zeile.kopf{display:none}}
+@media(max-width:560px){
+.zeile{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) 32px;grid-template-areas:"name name name x" "geb heim ausw .";gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.zeile .name{grid-area:name}.zeile .x{grid-area:x}.f.geb{grid-area:geb}.f.heim{grid-area:heim}.f.ausw{grid-area:ausw}
+.f span{display:block;font-size:11px;font-weight:700;color:var(--muted);margin:0 0 3px 2px}
+.zeile.kopf{display:none}}
 </style>
 <link rel="icon" type="image/svg+xml" href="https://hoebelje.github.io/fussball/icons/kader.svg">
 </head>
@@ -53,7 +60,7 @@ details{margin-top:18px;font-size:14px;color:var(--muted)}details input{margin:6
 const $=id=>document.getElementById(id);
 let daten=null,pw="",api="";
 const attr=s=>String(s??"").replace(/[&"<>]/g,c=>({"&":"&amp;",'"':"&quot;","<":"&lt;",">":"&gt;"}[c]));
-const zeile=(s={})=>`<div class="zeile"><input class="name" placeholder="Name" value="${attr(s.name)}"><input type="date" value="${attr(s.geburtsdatum)}"><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_heim)}"><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_ausw)}"><button class="x" type="button" title="Entfernen">✕</button></div>`;
+const zeile=(s={})=>`<div class="zeile"><input class="name" placeholder="Name" value="${attr(s.name)}"><label class="f geb"><span>Geburtsdatum</span><input type="date" value="${attr(s.geburtsdatum)}"></label><label class="f heim"><span>Nr. Heim</span><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_heim)}"></label><label class="f ausw"><span>Nr. Ausw.</span><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_ausw)}"></label><button class="x" type="button" title="Entfernen">✕</button></div>`;
 const zeichnen=()=>{$("liste").innerHTML=(daten.spieler||[]).map(zeile).join("")};
 $("liste").onclick=e=>{if(e.target.classList.contains("x")){
   const z=e.target.parentNode,n=z.querySelector(".name").value||"diese Zeile";
