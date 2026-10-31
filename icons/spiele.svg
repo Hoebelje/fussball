@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 84 84"><rect width="84" height="84" rx="19" fill="#2a5bd1"/><defs><clipPath id="c"><circle cx="42" cy="42" r="19"/></clipPath>
+<polygon id="p" points="0,-7 6.66,-2.16 4.11,5.66 -4.11,5.66 -6.66,-2.16"/></defs>
+<g clip-path="url(#c)" fill="#8ec2ff" stroke="#fff" stroke-width="2.5" stroke-linejoin="round">
+<use href="#p" transform="translate(42 21) rotate(-180)"/>
+<use href="#p" transform="translate(62 35.5) rotate(-108)"/>
+<use href="#p" transform="translate(54.3 59) rotate(-36)"/>
+<use href="#p" transform="translate(29.7 59) rotate(36)"/>
+<use href="#p" transform="translate(22 35.5) rotate(108)"/></g>
+<g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+<path d="M42 32.5 L51 39.1 L47.6 49.7 L36.4 49.7 L33 39.1 Z" fill="#8ec2ff" stroke-width="2.5"/>
+<path d="M42 32.5V28 M51 39.1 L55.3 37.7 M47.6 49.7 L50.2 53.3 M36.4 49.7 L33.8 53.3 M33 39.1 L28.7 37.7" stroke-width="2.5"/>
+<circle cx="42" cy="42" r="19" stroke-width="3.5"/></g></svg>
