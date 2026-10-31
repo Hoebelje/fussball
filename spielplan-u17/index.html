@@ -8,6 +8,7 @@
 :root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;--home:#E8F5EC;--homeline:#1E8E3E;--danger:#C5221F;color-scheme:light}
 *{box-sizing:border-box}
 html,body{overflow:hidden} /* nicht scrollbar: Seite steckt in Wix in einem langen Frame */
+html.standalone,html.standalone body{overflow:auto} /* direkt aufgerufen (nicht im Frame): normal scrollbar */
 body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
 button,input,select{font:inherit;color:inherit}
 .app{max-width:680px;margin:0 auto;padding:16px 12px 24px}
@@ -111,6 +112,7 @@ form.edit input:focus,form.edit select:focus,.panel input:focus{outline:2px soli
 <link rel="icon" type="image/svg+xml" href="https://hoebelje.github.io/fussball/icons/spielplan-b.svg">
 <link rel="icon" type="image/png" sizes="512x512" href="https://hoebelje.github.io/fussball/icons/spielplan-b-512.png">
 <link rel="apple-touch-icon" href="https://hoebelje.github.io/fussball/icons/spielplan-b-180.png">
+<script>try{if(window.self===window.top)document.documentElement.classList.add("standalone")}catch(e){}</script>
 </head>
 <body>
 <div class="app" id="app">
