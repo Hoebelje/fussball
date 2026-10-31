@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>U17-Kader bearbeiten</title>
+<style>
+:root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.app{max-width:760px;margin:0 auto;padding:16px 12px 40px}
+h1{margin:0 0 4px;font-size:22px;color:var(--accent)}
+p{color:var(--muted);font-size:14px}
+input{font:inherit;font-size:15px;padding:8px;border:1px solid var(--line);border-radius:8px;min-width:0}
+button{font:inherit;font-size:14px;font-weight:700;padding:9px 14px;border:0;border-radius:8px;cursor:pointer;background:var(--accent);color:#fff}
+button.sek{background:var(--surface);color:var(--accent)}
+button.x{background:none;color:#C5221F;padding:6px 8px}
+.login{max-width:320px;margin:50px auto;text-align:center}.login input{width:100%;margin:8px 0}.login button{width:100%}
+.zeile{display:grid;grid-template-columns:1fr 140px 62px 62px 30px;gap:6px;margin-bottom:6px;align-items:center}
+.zeile.kopf{font-size:12px;font-weight:700;color:var(--muted)}
+.zeile input{width:100%}
+.leiste{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.meldung{min-height:20px;font-size:14px}
+.ok{color:#137333}.fehler{color:#C5221F}
+details{margin-top:18px;font-size:14px;color:var(--muted)}details input{margin:6px 0;width:100%}
+@media(max-width:560px){.zeile{grid-template-columns:1fr 1fr 56px 56px 28px}.zeile .name{grid-column:1/-1}.zeile.kopf{display:none}}
+</style>
+<link rel="icon" type="image/svg+xml" href="https://hoebelje.github.io/fussball/icons/kader.svg">
+</head>
+<body>
+<div class="app">
+  <div class="login" id="login">
+    <h1>Kader bearbeiten</h1>
+    <p>Bitte Passwort eingeben.</p>
+    <form id="form"><input type="password" id="pw" placeholder="Passwort" autocomplete="current-password" autofocus><div class="meldung fehler" id="lfehler"></div><button type="submit">Anmelden</button></form>
+  </div>
+  <div id="editor" hidden>
+    <h1>U17-Kader bearbeiten</h1>
+    <p>Änderungen erst mit „Speichern“ übernehmen. Danach ist die Kader-Seite nach 1–2 Minuten aktuell.</p>
+    <div class="zeile kopf"><div>Name</div><div>Geburtsdatum</div><div>Nr. Heim</div><div>Nr. Ausw.</div><div></div></div>
+    <div id="liste"></div>
+    <div class="leiste"><button class="sek" id="neu" type="button">+ Spielerin hinzufügen</button><button id="speichern" type="button">Speichern</button><a href="./" style="align-self:center;font-size:14px;color:var(--accent)">Zur Kader-Seite</a></div>
+    <div class="meldung" id="meldung"></div>
+    <details><summary>Passwort ändern</summary>
+      <input type="password" id="neupw" placeholder="Neues Passwort (mind. 8 Zeichen)" autocomplete="new-password">
+      <p>Wird beim nächsten Speichern übernommen.</p>
+    </details>
+  </div>
+</div>
+<script src="crypto.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+let daten=null,pw="",api="";
+const attr=s=>String(s??"").replace(/[&"<>]/g,c=>({"&":"&amp;",'"':"&quot;","<":"&lt;",">":"&gt;"}[c]));
+const zeile=(s={})=>`<div class="zeile"><input class="name" placeholder="Name" value="${attr(s.name)}"><input type="date" value="${attr(s.geburtsdatum)}"><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_heim)}"><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_ausw)}"><button class="x" type="button" title="Entfernen">✕</button></div>`;
+const zeichnen=()=>{$("liste").innerHTML=(daten.spieler||[]).map(zeile).join("")};
+$("liste").onclick=e=>{if(e.target.classList.contains("x")){
+  const z=e.target.parentNode,n=z.querySelector(".name").value||"diese Zeile";
+  if(confirm(n+" entfernen?"))z.remove();}};
+$("neu").onclick=()=>{$("liste").insertAdjacentHTML("beforeend",zeile());$("liste").lastChild.querySelector(".name").focus()};
+const sammeln=()=>[...$("liste").children].map(z=>{const i=z.querySelectorAll("input");
+  const num=v=>v===""?null:Number(v);
+  return{name:i[0].value.trim(),geburtsdatum:i[1].value,nr_heim:num(i[2].value),nr_ausw:num(i[3].value)}}).filter(s=>s.name);
+const anmelden=async p=>{
+  try{
+    const[c,e]=await Promise.all([fetch("config.json?v="+Date.now()).then(r=>r.json()),fetch("kader.enc.json?v="+Date.now(),{cache:"no-store"}).then(r=>r.json())]);
+    api=c.api||"";daten=await KaderCrypto.entschluesseln(e,p);pw=p;
+    try{sessionStorage.setItem("kaderpw",p)}catch(x){}
+    $("login").hidden=true;$("editor").hidden=false;zeichnen();return true;
+  }catch(x){return false}
+};
+$("form").onsubmit=async e=>{e.preventDefault();$("lfehler").textContent="";
+  if(!await anmelden($("pw").value))$("lfehler").textContent="Falsches Passwort."};
+try{const g=sessionStorage.getItem("kaderpw");if(g)anmelden(g)}catch(e){}
+const meld=(t,ok)=>{$("meldung").className="meldung "+(ok?"ok":"fehler");$("meldung").textContent=t};
+$("speichern").onclick=async()=>{
+  if(!api)return meld("Speichern ist noch nicht eingerichtet (config.json: api fehlt, siehe apps-script/EINRICHTUNG.md).");
+  const neu=$("neupw").value;
+  if(neu&&neu.length<8)return meld("Das neue Passwort braucht mindestens 8 Zeichen.");
+  const d={...daten,spieler:sammeln(),stand:new Date().toISOString().slice(0,10)};
+  $("speichern").disabled=true;meld("Speichere …",true);
+  try{
+    const daten2=await KaderCrypto.verschluesseln(d,neu||pw);
+    const r=await fetch(api,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({passwort:pw,neues_passwort:neu||undefined,daten:daten2})}).then(r=>r.json());
+    if(!r.ok)throw new Error(r.fehler||"Unbekannter Fehler");
+    daten=d;if(neu){pw=neu;$("neupw").value="";try{sessionStorage.setItem("kaderpw",neu)}catch(x){}}
+    meld("Gespeichert. Die Kader-Seite ist in 1–2 Minuten aktuell.",true);
+  }catch(x){meld("Fehler: "+x.message)}
+  $("speichern").disabled=false;
+};
+</script>
+</body>
+</html>

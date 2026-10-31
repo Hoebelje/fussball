@@ -6,9 +6,7 @@ Adresse: https://hoebelje.github.io/fussball/kader-u17-2026/
 
 Alle Spielerinnen stehen in **`kader.json`**. Die Seite selbst (`index.html`) musst du nicht anfassen.
 
-1. Auf GitHub `kader-u17-2026/kader.json` öffnen und auf den Stift (Edit) klicken.
-2. Ändern, ergänzen oder löschen.
-3. Unten auf **Commit changes** klicken. Nach 1–2 Minuten ist die Seite aktualisiert.
+Kader jetzt über die Seite `bearbeiten.html` bearbeiten (Passwort nötig, Einrichtung: `apps-script/EINRICHTUNG.md`). Die Daten liegen verschlüsselt in `kader.enc.json`.
 
 ### Eine Spielerin sieht so aus
 
