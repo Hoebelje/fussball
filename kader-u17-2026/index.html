@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>U17-Kader 2026</title>
+<style>
+:root{--bg:#fff;--surface:#EEF3FC;--ink:#14213D;--muted:#4A5675;--faint:#6F7B98;--line:#DCE4F5;--accent:#2356D9;color-scheme:light}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.app{max-width:680px;margin:0 auto;padding:16px 12px 24px}
+h1{margin:0 0 4px;font-size:22px;font-weight:700;color:var(--accent)}
+.sub{margin:0 0 14px;font-size:13px;color:var(--muted)}
+.wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;text-align:left;padding:10px 8px;white-space:nowrap}
+td{padding:9px 8px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.n{width:32px;color:var(--faint);text-align:right}
+.name{font-weight:600}
+.num{text-align:center;width:64px}
+th.num{text-align:center}
+.note{margin-top:14px;font-size:12px;color:var(--faint);line-height:1.5}
+.note a{color:var(--accent)}
+.err{padding:14px;color:#C5221F;font-size:14px}
+@media(max-width:420px){table{font-size:13px}th,td{padding:8px 5px}.num{width:48px}}
+</style>
+<link rel="icon" type="image/svg+xml" href="https://hoebelje.github.io/fussball/icons/kader.svg">
+<link rel="icon" type="image/png" sizes="512x512" href="https://hoebelje.github.io/fussball/icons/kader-512.png">
+<link rel="apple-touch-icon" href="https://hoebelje.github.io/fussball/icons/kader-180.png">
+</head>
+<body>
+<div class="app">
+  <h1 id="titel">U17-Kader 2026</h1>
+  <p class="sub" id="sub"></p>
+  <div class="wrap"><table>
+    <thead><tr><th class="n">#</th><th>Name</th><th>Geb.datum</th><th class="num">Nr. Heim</th><th class="num">Nr. Ausw.</th></tr></thead>
+    <tbody id="body"></tbody>
+  </table></div>
+  <p class="note" id="note"></p>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const dat=iso=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(iso||"");return m?`${m[3]}.${m[2]}.${m[1].slice(2)}`:esc(iso||"")};
+fetch("kader.json?v="+Date.now(),{cache:"no-store"}).then(r=>r.json()).then(d=>{
+  $("titel").textContent=(d.team?d.team.split(" ")[0]:"U17")+"-Kader "+(d.saison||"");
+  const sp=d.spieler||[];
+  $("sub").textContent=(d.team||"")+" · "+sp.length+" Spielerinnen";
+  $("body").innerHTML=sp.map((s,i)=>`<tr><td class="n">${i+1}</td><td class="name">${esc(s.name)}</td><td>${dat(s.geburtsdatum)}</td><td class="num">${esc(s.nr_heim??"")}</td><td class="num">${esc(s.nr_ausw??"")}</td></tr>`).join("");
+  const st=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d.stand||"");
+  $("note").innerHTML=(st?`Stand: ${st[3]}.${st[2]}.${st[1]}. `:"")+`Bearbeiten: <a href="https://github.com/Hoebelje/fussball/edit/main/kader-u17-2026/kader.json" target="_blank" rel="noopener">kader.json auf GitHub</a>`;
+}).catch(()=>{$("body").innerHTML='<tr><td colspan="5" class="err">Der Kader konnte nicht geladen werden.</td></tr>'});
+</script>
+</body>
+</html>
