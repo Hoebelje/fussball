@@ -39,6 +39,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 .iconbtn{width:44px;height:44px;border:none;background:transparent;border-radius:10px;font-size:22px;line-height:1}
 .iconbtn:hover{background:var(--surface)}
 .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:10px}
+.day{position:relative}
+.day .fdot{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:#D4537E}
+.day.sel .fdot{background:#fff}
+.feiertag{display:flex;align-items:center;gap:7px;margin:-4px 0 8px;font-size:13px;font-weight:600;color:#72243E}
+.feiertag::before{content:"";flex:none;width:7px;height:7px;border-radius:50%;background:#D4537E}
+.feiertag[hidden],.ferien[hidden]{display:none}
+.ferien{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:-4px 0 10px}
+.ferien div{background:#E1F5EE;color:#085041;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ferien div span{font-weight:400}
 .day{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:6px 0;min-height:48px;font-size:11px;color:var(--muted);line-height:1.3}
 .day b{display:block;font-size:15px;font-weight:600;color:var(--ink)}
 .day.today{border-color:var(--accent)}
@@ -133,6 +142,8 @@ html.embedded,html.embedded body{height:100%;overflow:hidden}
     <button class="iconbtn" id="next" aria-label="Nächste Woche">›</button>
   </div>
   <div class="days" id="days"></div>
+  <p class="feiertag" id="feiertag" hidden></p>
+  <div class="ferien" id="ferien" hidden></div>
   <div class="allday" id="allday"></div>
   <div class="board">
     <div class="vp" id="vp">
@@ -221,6 +232,17 @@ const CONFIG = {
   // Vereinsname vor den eigenen Teams (alle Teams oben außer IDEAL)
   ownClub: "Agrippina"
 };
+/* ----- Schulferien NRW (Quelle: Schulministerium NRW / kalenderpedia.de) -----
+   Bitte jährlich ergänzen. Erster und letzter Ferientag. */
+const FERIEN = [
+  { name: "Herbstferien NRW",       von: "2026-10-17", bis: "2026-10-31" },
+  { name: "Weihnachtsferien NRW",   von: "2026-12-23", bis: "2027-01-06" },
+  { name: "Osterferien NRW",        von: "2027-03-22", bis: "2027-04-03" },
+  { name: "Pfingstferien NRW",      von: "2027-05-18", bis: "2027-05-18" },
+  { name: "Sommerferien NRW",       von: "2027-07-19", bis: "2027-08-31" },
+  { name: "Herbstferien NRW",       von: "2027-10-23", bis: "2027-11-06" },
+  { name: "Weihnachtsferien NRW",   von: "2027-12-24", bis: "2028-01-08" }
+];
 /* =================================================== */
 
 // In einem Rahmen (Wix)? Dann scrollt die Seite selbst nicht.
@@ -483,6 +505,45 @@ vp.addEventListener("scroll", updateJumps, { passive:true });
 let rt = 0;
 window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (layout()) render(); else updateJumps(); }, 120); });
 
+/* ---------- Feiertage NRW (berechnet) und Schulferien ---------- */
+function ostern(j){
+  const a=j%19,b=Math.floor(j/100),c=j%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31),ta=((h+l-7*m+114)%31)+1;
+  return new Date(j, mo-1, ta);
+}
+const feiertagCache = {};
+function feiertage(j){
+  if (feiertagCache[j]) return feiertagCache[j];
+  const o = ostern(j), f = {};
+  const add = (d, n) => { f[key(d)] = n; };
+  add(new Date(j,0,1),"Neujahr"); add(addDays(o,-2),"Karfreitag"); add(addDays(o,1),"Ostermontag");
+  add(new Date(j,4,1),"Tag der Arbeit"); add(addDays(o,39),"Christi Himmelfahrt"); add(addDays(o,50),"Pfingstmontag");
+  add(addDays(o,60),"Fronleichnam"); add(new Date(j,9,3),"Tag der Deutschen Einheit"); add(new Date(j,10,1),"Allerheiligen");
+  add(new Date(j,11,25),"1. Weihnachtsfeiertag"); add(new Date(j,11,26),"2. Weihnachtsfeiertag");
+  return (feiertagCache[j] = f);
+}
+function feiertagAm(d){ return feiertage(d.getFullYear())[key(d)] || ""; }
+const tagVon = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const kurzDatum = d => d.getDate() + "." + (d.getMonth()+1) + ".";
+function ferienZeigen(mon){
+  const el = $("ferien"); el.innerHTML = "";
+  const sun = addDays(mon, 6);
+  FERIEN.forEach(f => {
+    const v = tagVon(f.von), b = tagVon(f.bis);
+    if (b < mon || v > sun) return;
+    const s = Math.max(0, Math.round((v - mon) / 864e5)), e = Math.min(6, Math.round((b - mon) / 864e5));
+    const div = document.createElement("div");
+    div.style.gridColumn = (s + 1) + " / " + (e + 2);
+    div.title = f.name + " · " + kurzDatum(v) + "–" + kurzDatum(b);
+    div.append(f.name + " ");
+    const z = document.createElement("span"); z.textContent = "· " + (v.getTime() === b.getTime() ? kurzDatum(v) : kurzDatum(v) + "–" + kurzDatum(b));
+    div.appendChild(z);
+    el.appendChild(div);
+  });
+  el.hidden = !el.children.length;
+}
+
 /* ---------- Wochenzeile ---------- */
 const MON_LANG = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 const MON_KURZ = ["Jan.","Feb.","März","Apr.","Mai","Juni","Juli","Aug.","Sept.","Okt.","Nov.","Dez."];
@@ -524,10 +585,15 @@ async function render(){
     b.setAttribute("aria-label", LONG[d]+", "+dm(date));
     b.setAttribute("aria-pressed", sameDay(date,selected));
     b.append(DAYS[d]); const n=document.createElement("b"); n.textContent=date.getDate(); b.appendChild(n);
+    const ft = feiertagAm(date);
+    if (ft){ const p=document.createElement("i"); p.className="fdot"; p.setAttribute("aria-hidden","true"); b.appendChild(p); b.setAttribute("aria-label", LONG[d]+", "+dm(date)+", "+ft); }
     b.onclick = () => { selected = date; render(); };
     days.appendChild(b);
   }
 
+  const ftHeute = feiertagAm(selected);
+  $("feiertag").textContent = ftHeute; $("feiertag").hidden = !ftHeute;
+  ferienZeigen(mon);
   fitHours();          // Kopfzeile steht jetzt, Höhe neu berechnen
   drawBackground();
   $("allday").innerHTML = "";
