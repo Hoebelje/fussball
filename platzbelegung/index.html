@@ -11,12 +11,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple
 .app{max-width:680px;margin:0 auto;padding:16px 12px 20px}
 .club{margin:0;font-size:13px;color:var(--muted)}
 h1{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:0;min-height:34px}
 .topr{display:flex;align-items:center;gap:6px}
 .todaybtn{height:32px;padding:0 14px;border-radius:99px;border:1px solid var(--accent);background:var(--bg);color:var(--accent);font-size:13px;font-weight:600}
 .todaybtn:hover{background:var(--surface)}
 .todaybtn[hidden]{display:none}
-.infobtn{display:inline-flex;align-items:center;gap:5px;min-height:44px;padding:0 10px;margin-right:-10px;border:none;background:transparent;border-radius:10px;color:var(--accent);font-size:14px;font-weight:600}
+.infobtn{display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:0 10px;margin-right:-10px;border:none;background:transparent;border-radius:10px;color:var(--accent);font-size:14px;font-weight:600}
 .infobtn:hover{background:var(--surface)}
 .infobtn svg{width:18px;height:18px}
 .infopop{position:absolute;top:0;right:8px;width:min(440px,calc(100% - 16px));background:var(--bg);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(20,33,61,.18);padding:14px 16px 16px;opacity:0;visibility:hidden;transition:opacity .15s;z-index:10;font-size:13px;line-height:1.5}
@@ -32,7 +32,8 @@ h1{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
 .infopop td:last-child,.infopop th:last-child{padding-right:0}
 .infopop td:nth-child(2){white-space:nowrap}
 button{font:inherit;color:inherit;cursor:pointer}
-.weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.weeknav .iconbtn{height:34px}
 .weeknav span{font-size:14px;font-weight:600}
 .weeknav .kw{font-weight:400}
 .iconbtn{width:44px;height:44px;border:none;background:transparent;border-radius:10px;font-size:22px;line-height:1}
