@@ -34,7 +34,7 @@ h1{margin:0;font-size:22px;font-weight:700;color:var(--accent)}
 button{font:inherit;color:inherit;cursor:pointer}
 .weeknav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .weeknav .iconbtn{height:34px}
-.weeknav span{font-size:14px;font-weight:600}
+.weeknav span{font-size:14px;font-weight:600;white-space:nowrap}
 .weeknav .kw{font-weight:400}
 .iconbtn{width:44px;height:44px;border:none;background:transparent;border-radius:10px;font-size:22px;line-height:1}
 .iconbtn:hover{background:var(--surface)}
@@ -483,6 +483,29 @@ vp.addEventListener("scroll", updateJumps, { passive:true });
 let rt = 0;
 window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if (layout()) render(); else updateJumps(); }, 120); });
 
+/* ---------- Wochenzeile ---------- */
+const MON_LANG = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+const MON_KURZ = ["Jan.","Feb.","März","Apr.","Mai","Juni","Juli","Aug.","Sept.","Okt.","Nov.","Dez."];
+// "23.–29. November (KW 48)"; passt das nicht, "23.–29. Nov. (KW 48)"
+function wocheText(mon, sun, lang){
+  const M = lang ? MON_LANG : MON_KURZ;
+  if (mon.getMonth() === sun.getMonth()) return mon.getDate() + ".–" + sun.getDate() + ". " + M[sun.getMonth()];
+  return mon.getDate() + ". " + MON_KURZ[mon.getMonth()] + " – " + sun.getDate() + ". " + M[sun.getMonth()];
+}
+let letzteWoche = null;
+function wocheBeschriften(mon, sun){
+  letzteWoche = [mon, sun];
+  const el = $("weeklabel"), nav = el.parentNode;
+  const platz = nav.clientWidth - [...nav.children].filter(c => c !== el).reduce((s, c) => s + c.offsetWidth, 0) - 8;
+  for (const lang of [true, false]){
+    el.textContent = wocheText(mon, sun, lang) + " ";
+    const k = document.createElement("span"); k.className = "kw"; k.textContent = "(KW " + kw(mon) + ")";
+    el.appendChild(k);
+    if (el.scrollWidth <= platz) break;
+  }
+}
+addEventListener("resize", () => { if (letzteWoche) wocheBeschriften(letzteWoche[0], letzteWoche[1]); });
+
 /* ---------- Rendern ---------- */
 let renderToken = 0, loadTimer = 0;
 async function render(){
@@ -490,9 +513,7 @@ async function render(){
   const mon = monday(selected);
   const today = startOfDay(new Date());
   const sun = addDays(mon,6);
-  $("weeklabel").textContent = dm(mon) + " – " + dm(sun) + " ";
-  const kwEl = document.createElement("span"); kwEl.className = "kw"; kwEl.textContent = "(KW " + kw(mon) + ")";
-  $("weeklabel").appendChild(kwEl);
+  wocheBeschriften(mon, sun);
 
   $("todaybtn").hidden = sameDay(selected, today);
   const days = $("days"); days.innerHTML = "";
