@@ -55,7 +55,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .day.sel{background:var(--accent);border-color:var(--accent);color:#fff}
 .day.sel b{color:#fff}
 .board{position:relative}
-.fade{position:absolute;top:0;right:0;bottom:0;width:44px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),var(--bg) 90%);transition:opacity .2s;z-index:6}
+.fade{position:absolute;top:var(--head,46px);right:0;bottom:0;width:44px;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),var(--bg) 90%);transition:opacity .2s;z-index:6}
 .dots{display:flex;align-items:center;justify-content:center;gap:4px;margin:8px 0 0}
 .dot{width:28px;height:28px;border:none;background:transparent;padding:0;display:inline-flex;align-items:center;justify-content:center}
 .dot i{display:block;width:8px;height:8px;border-radius:4px;background:#C9D5F0;transition:width .2s,background .2s}
@@ -83,7 +83,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .times{z-index:3;font-size:11px;color:var(--faint)}
 .times span{position:absolute;left:0;transform:translateY(2px)}
 .harea,.carea{position:relative;flex:none}
-.grp{scroll-snap-align:start;position:absolute;top:0;text-align:center;font-size:12px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:3px;white-space:nowrap}
+.grp .gl{position:relative;display:inline-block}
+.grp{scroll-snap-align:start;position:absolute;top:0;text-align:left;font-size:12px;font-weight:700;color:var(--accent);border-bottom:2px solid var(--accent);padding-bottom:3px;white-space:nowrap}
 .sub{position:absolute;top:25px;text-align:center;font-size:11px;color:var(--muted)}
 .col{position:absolute;top:0;bottom:0;border-radius:6px;background:repeating-linear-gradient(var(--surface) 0 calc(var(--h) - 1px),var(--line) calc(var(--h) - 1px) var(--h))}
 .ev{position:absolute;border:none;border-radius:6px;padding:4px 6px;font-size:12px;font-weight:600;text-align:left;display:flex;flex-direction:column;align-items:flex-start;overflow:hidden;line-height:1.25;z-index:1}
@@ -436,7 +437,8 @@ function layout(){
   harea.innerHTML = "";
   AREAS.forEach(a => {
     const g = document.createElement("div"); g.className = "grp";
-    g.style.left = a.x + "px"; g.style.width = a.w + "px"; g.textContent = a.label;
+    g.style.left = a.x + "px"; g.style.width = a.w + "px";
+    const t = document.createElement("span"); t.className = "gl"; t.textContent = a.label; g.appendChild(t);
     harea.appendChild(g);
   });
   COLS.forEach(c => {
@@ -489,7 +491,24 @@ function buildPages(){
   });
   $("dots").appendChild(dotLabel);
 }
+// Flächenüberschriften stehen mittig im sichtbaren Teil ihrer Fläche (bleiben beim Anschnitt lesbar)
+function ueberschriftenPlatzieren(){
+  const sl = vp.scrollLeft, sichtbar = vp.clientWidth - TW;
+  [...harea.querySelectorAll(".grp")].forEach((g, i) => {
+    const a = AREAS[i], t = g.firstChild; if (!a || !t) return;
+    const w = t.offsetWidth;
+    const vl = Math.max(a.x, sl), vr = Math.min(a.x + a.w, sl + sichtbar);
+    let mitte = vr > vl ? (vl + vr) / 2 : a.x + a.w / 2;
+    let links = mitte - w / 2;
+    links = Math.min(links, a.x + a.w - w);             // nicht über das Ende der Fläche
+    links = Math.max(links, a.x);                       // nicht vor den Anfang der Fläche …
+    if (vr > vl) links = Math.min(links, sl + sichtbar - w - 4);   // … außer sie ist nur angeschnitten: dann am rechten Rand lesbar
+    t.style.left = (links - a.x) + "px";
+  });
+}
+vp.addEventListener("scroll", ueberschriftenPlatzieren, { passive:true });
 function updateJumps(){
+  ueberschriftenPlatzieren();
   buildPages();
   let cur = 0, best = Infinity;
   pages.forEach((pg, i) => { const d = Math.abs(vp.scrollLeft - pg.x); if (d < best){ best = d; cur = i; } });
