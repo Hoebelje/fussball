@@ -227,7 +227,7 @@ const CONFIG = {
     "Frauen":   { short: "Frauen", name: "Frauen",   bg: "#FBEAF0", fg: "#72243E" },
     "Herren 1": { short: "H1",     name: "Herren 1", bg: "#C9DCFA", fg: "#0C447C" },
     "Herren 2": { short: "H2",     name: "Herren 2", bg: "#EEEDFE", fg: "#3C3489" },
-    "IDEAL":    { short: "IDEAL",  name: "IDEAL C.F. Casa de España", bg: "#E4E7EC", fg: "#2C3442" }
+    "IDEAL":    { short: "IDEAL",  block: "CASA", name: "IDEAL C.F. Casa de España", bg: "#E4E7EC", fg: "#2C3442" }
   },
   otherColor: { bg: "#ECEDEA", fg: "#2C2F2D" },
   // Vereinsname vor den eigenen Teams (alle Teams oben außer IDEAL)
@@ -763,7 +763,7 @@ function place(btn, c0, c1, a, b, lane, lanes, bare){
 
 function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b, bare){
   a = a ?? bl.a; b = b ?? bl.b;
-  const e = bl.e, t = teamOf(e.title);
+  const e = bl.e; let t = teamOf(e.title); const tSheet = t;
   const btn = document.createElement("button");
   const spiel = istSpiel(e);
   btn.className = "ev" + (spiel ? " spiel" : (e.series ? "" : " single"));
@@ -773,27 +773,30 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b, bare){
     // Teilstück eines Termins (z. B. während einer kurzen Überschneidung): ohne Text
     btn.style.padding = "0"; btn.style.borderRadius = "3px";
     btn.setAttribute("aria-label", t.name+", "+hm(e.start)+" bis "+hm(e.end));
-    btn.onclick = () => openSheet(bl, t);
+    btn.onclick = () => openSheet(bl, tSheet);
     layer.appendChild(btn);
     return;
   }
   const wide = (c1 > c0 && lanes === 1);
   // Teamteil aus dem Titel, z. B. "IDEAL U13 Heimspiel – …" -> "IDEAL U13"
+  // Kurzname nur in der Terminvorschau (z. B. IDEAL -> CASA); Details bleiben unverändert
+  if (t.block) t = { ...t, short: t.block, name: t.block, blockFrom: t.key };
   const head = (e.title||"").split(/\s+–\s+|\s+(?=(Heimspiel|Kinderfestival|Training|Testspiel|Spiel)\b)/i)[0].trim();
-  const extra = norm(head).startsWith(norm(t.key)) && norm(head).length > norm(t.key).length ? head.slice(t.key.length).trim() : "";
-  btn.setAttribute("aria-label", (t.club ? t.club+" "+t.name : (extra ? t.key+" "+extra : t.name))+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
+  const hk = t.blockFrom || t.key, bk = t.block || t.key;
+  const extra = norm(head).startsWith(norm(hk)) && norm(head).length > norm(hk).length ? head.slice(hk.length).trim() : "";
+  btn.setAttribute("aria-label", (t.club ? t.club+" "+t.name : (extra ? bk+" "+extra : t.name))+", "+e.cal+(bl.where?" "+bl.where:"")+", "+hm(e.start)+" bis "+hm(e.end));
   // Flacher Block: Team und Anpfiff in einer Zeile
   if ((b-a)*H - 4 < 32){
-    const name = wide ? (t.club ? t.club + " " + t.name : (extra ? t.key + " " + extra : t.name)) : (t.club ? t.short : (extra ? t.key + " " + extra : t.short));
+    const name = wide ? (t.club ? t.club + " " + t.name : (extra ? bk + " " + extra : t.name)) : (t.club ? t.short : (extra ? bk + " " + extra : t.short));
     btn.classList.add("flat");
     btn.textContent = name + " · " + (zeitInfo(e.cal) ? zeitInfo(e.cal).kurz : hm(e.start));
-    btn.onclick = () => openSheet(bl, t);
+    btn.onclick = () => openSheet(bl, tSheet);
     layer.appendChild(btn);
     return;
   }
   // Eigene Teams: "Agrippina U15 (W)", schmal: "Agrippina" + Zeile "U15 W"
   const sub = t.club ? t.short : extra;
-  btn.append(wide ? (t.club ? t.club + " " + t.name : (extra ? t.key + " " + extra : t.name)) : (t.club || t.short));
+  btn.append(wide ? (t.club ? t.club + " " + t.name : (extra ? bk + " " + extra : t.name)) : (t.club || t.short));
   if (!wide && sub){ const x=document.createElement("small"); x.className="team"; x.textContent=sub; btn.appendChild(x); }
   const px = (b-a)*H - 4 - (!wide && sub ? 14 : 0);
   const zi = zeitInfo(e.cal);
@@ -814,7 +817,7 @@ function drawBlock(bl, c0, c1, lane, lanes, showTime, a, b, bare){
       btn.appendChild(s);
     }
   }
-  btn.onclick = () => openSheet(bl, t);
+  btn.onclick = () => openSheet(bl, tSheet);
   layer.appendChild(btn);
 }
 
@@ -831,7 +834,7 @@ function drawSeg(s, c){
   const shown = names.length <= fit ? names : names.slice(0, Math.max(1, fit-1));
   shown.forEach(t => {
     const ch = document.createElement("span"); ch.className = "chip";
-    ch.textContent = t.short; ch.style.background = t.bg; ch.style.color = t.fg;
+    ch.textContent = t.block || t.short; ch.style.background = t.bg; ch.style.color = t.fg;
     btn.appendChild(ch);
   });
   if (shown.length < names.length){
