@@ -14,6 +14,7 @@
     { "datum": "2026-11-28", "zeit": "17:15", "heim": "SSV Plittersdorf U17w", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga", "spielnr": "231212011", "fbde": {"datum":"2026-11-28","zeit":"17:15","heim":false} },
     { "datum": "2026-12-05", "zeit": "14:30", "heim": "SV Agrippina-Germania Köln", "gast": "FC Eschweiler 2020 - B1 Juniorinnen", "wettbewerb": "Bezirksliga", "spielnr": "231212014", "fbde": {"datum":"2026-12-05","zeit":"14:30","heim":true} },
     { "datum": "2026-12-12", "zeit": "11:00", "heim": "SV Agrippina-Germania Köln", "gast": "SC Fortuna Köln", "wettbewerb": "Bezirksliga", "spielnr": "231212018", "fbde": {"datum":"2026-12-12","zeit":"11:00","heim":true} },
+    { "datum": "2026-12-20", "zeit": "15:00", "heim": "SV Agrippina-Germania Köln", "gast": "Lametta-Hallen-Cup", "wettbewerb": "Turnier" },
     { "datum": "2027-02-06", "zeit": "", "heim": "SV Agrippina-Germania Köln", "gast": "Karneval", "wettbewerb": "Bezirksliga" },
     { "datum": "2027-02-28", "zeit": "11:00", "heim": "SC Selfkant", "gast": "SV Agrippina-Germania Köln", "wettbewerb": "Bezirksliga", "spielnr": "231212024", "fbde": {"datum":"2027-02-28","zeit":"11:00","heim":false} },
     { "datum": "2027-03-06", "zeit": "12:00", "heim": "SV Agrippina-Germania Köln", "gast": "SV Grün-Weiß Welldorf-Güsten", "wettbewerb": "Bezirksliga", "spielnr": "231212026", "fbde": {"datum":"2027-03-06","zeit":"12:00","heim":true} },
