@@ -34,7 +34,7 @@ const VEREINE = [
 const SPIELSTAETTE = "Zülpicher Wall";
 
 const PLATZ_KALENDER = "Platz";
-const TAGE_VORAUS = 60;          // so weit in die Zukunft wird abgeglichen
+const TAGE_VORAUS = 240;         // so weit in die Zukunft wird abgeglichen (ca. 8 Monate, bis Saisonende)
 const VORLAUF_MIN = 0;           // Termin beginnt genau mit dem Anpfiff
 
 // Mannschaftsart auf fussball.de -> Teamkürzel (für SV Agrippina), Spieldauer in Minuten, Platzanteil
