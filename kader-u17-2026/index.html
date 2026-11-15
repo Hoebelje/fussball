@@ -23,7 +23,7 @@ th.num{text-align:center}
 .head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.editbtn{flex:none;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:99px;border:1px solid var(--accent);color:var(--accent);background:var(--bg);font-size:14px;font-weight:600;text-decoration:none;margin-top:-6px}.editbtn:hover{background:var(--surface)}
 .note{margin-top:14px;font-size:12px;color:var(--faint);line-height:1.5}
 .note a{color:var(--accent)}
-.login{max-width:320px;margin:60px auto;text-align:center}.login p{color:var(--muted);font-size:14px}.login input{width:100%;padding:11px 12px;font-size:16px;border:1px solid var(--line);border-radius:8px;margin:8px 0}.login button{width:100%;padding:11px;font-size:15px;font-weight:700;color:#fff;background:var(--accent);border:0;border-radius:8px;cursor:pointer}.login .fehler{color:#C5221F;font-size:13px;min-height:18px}th.sort{cursor:pointer;user-select:none}th.sort:hover{color:var(--accent)}.err{padding:14px;color:#C5221F;font-size:14px}
+.login{max-width:320px;margin:60px auto;text-align:center}.login p{color:var(--muted);font-size:14px}.login input{width:100%;padding:11px 12px;font-size:16px;border:1px solid var(--line);border-radius:8px;margin:8px 0}.login button{width:100%;padding:11px;font-size:15px;font-weight:700;color:#fff;background:var(--accent);border:0;border-radius:8px;cursor:pointer}.login .fehler{color:#C5221F;font-size:13px;min-height:18px}tr.gruppe td{background:var(--surface);color:var(--accent);font-size:13px;font-weight:700;padding:8px;border-top:1px solid var(--line)}tr.gruppe span{font-weight:400;color:var(--muted);margin-left:6px}th.sort{cursor:pointer;user-select:none}th.sort:hover{color:var(--accent)}.err{padding:14px;color:#C5221F;font-size:14px}
 @media(max-width:420px){table{font-size:13px}th,td{padding:8px 5px}.num{width:48px}}
 </style>
 <link rel="icon" type="image/svg+xml" href="https://hoebelje.github.io/fussball/icons/kader.svg">
@@ -60,7 +60,19 @@ const zeichnen=()=>{
   let sp=(daten.spieler||[]).slice();
   if(richtung)sp.sort((a,b)=>richtung*String(a.geburtsdatum||"").localeCompare(String(b.geburtsdatum||"")));
   $("pfeil").textContent=richtung===1?"▲":richtung===-1?"▼":"↕";
-  $("body").innerHTML=sp.map((s,i)=>`<tr><td class="n">${i+1}</td><td class="name">${esc(s.name)}</td><td>${dat(s.geburtsdatum)}</td><td class="num">${esc(s.nr_heim??"")}</td><td class="num">${esc(s.nr_ausw??"")}</td></tr>`).join("");
+  /* Gruppen nach Altersklasse (Saison beginnt am 1. Juli), älteste zuerst */
+  const h=new Date(),ende=(h.getMonth()>=6?h.getFullYear():h.getFullYear()-1)+1;
+  const klasse=s=>{const j=parseInt(String(s.geburtsdatum||"").slice(0,4),10);if(!j)return 0;const a=ende-j;return a%2?a:a+1};
+  const gruppen=new Map();
+  sp.forEach(s=>{const k=klasse(s);if(!gruppen.has(k))gruppen.set(k,[]);gruppen.get(k).push(s)});
+  let nr=0,html="";
+  [...gruppen.keys()].sort((a,b)=>b-a).forEach(k=>{
+    const g=gruppen.get(k);
+    html+=k?`<tr class="gruppe"><td colspan="5">U${k}<span>· Jahrgang ${ende-k}/${String(ende-k+1).slice(2)} · ${g.length} ${g.length===1?"Spielerin":"Spielerinnen"}</span></td></tr>`
+           :`<tr class="gruppe"><td colspan="5">Ohne Geburtsdatum<span>· ${g.length}</span></td></tr>`;
+    html+=g.map(s=>`<tr><td class="n">${++nr}</td><td class="name">${esc(s.name)}</td><td>${dat(s.geburtsdatum)}</td><td class="num">${esc(s.nr_heim??"")}</td><td class="num">${esc(s.nr_ausw??"")}</td></tr>`).join("");
+  });
+  $("body").innerHTML=html;
 };
 $("sortDat").onclick=()=>{richtung=richtung===1?-1:1;zeichnen()};
 const zeigen=d=>{
