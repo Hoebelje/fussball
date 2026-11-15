@@ -45,7 +45,7 @@ details{margin-top:18px;font-size:14px;color:var(--muted)}details input{margin:6
   <div id="editor" hidden>
     <h1>U17-Kader bearbeiten</h1>
     <p>Änderungen erst mit „Speichern“ übernehmen. Danach ist die Kader-Seite nach 1–2 Minuten aktuell.</p>
-    <div class="zeile kopf"><div>Name</div><div>Geburtsdatum</div><div>Nr. Heim</div><div>Nr. Ausw.</div><div></div></div>
+    <div class="zeile kopf"><div>Name</div><div>Geburtsdatum</div><div>Trikotnr Blau</div><div>Trikotnr Pink</div><div></div></div>
     <div id="liste"></div>
     <div class="leiste"><button class="sek" id="neu" type="button">+ Spielerin hinzufügen</button><button id="speichern" type="button">Speichern</button><a href="./" style="align-self:center;font-size:14px;color:var(--accent)">Zur Kader-Seite</a></div>
     <div class="meldung" id="meldung"></div>
@@ -60,7 +60,7 @@ details{margin-top:18px;font-size:14px;color:var(--muted)}details input{margin:6
 const $=id=>document.getElementById(id);
 let daten=null,pw="",api="";
 const attr=s=>String(s??"").replace(/[&"<>]/g,c=>({"&":"&amp;",'"':"&quot;","<":"&lt;",">":"&gt;"}[c]));
-const zeile=(s={})=>`<div class="zeile"><input class="name" placeholder="Name" value="${attr(s.name)}"><label class="f geb"><span>Geburtsdatum</span><input type="date" value="${attr(s.geburtsdatum)}"></label><label class="f heim"><span>Nr. Heim</span><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_heim)}"></label><label class="f ausw"><span>Nr. Ausw.</span><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_ausw)}"></label><button class="x" type="button" title="Entfernen">✕</button></div>`;
+const zeile=(s={})=>`<div class="zeile"><input class="name" placeholder="Name" value="${attr(s.name)}"><label class="f geb"><span>Geburtsdatum</span><input type="date" value="${attr(s.geburtsdatum)}"></label><label class="f heim"><span>Trikotnr Blau</span><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_heim)}"></label><label class="f ausw"><span>Trikotnr Pink</span><input type="number" min="0" inputmode="numeric" value="${attr(s.nr_ausw)}"></label><button class="x" type="button" title="Entfernen">✕</button></div>`;
 const zeichnen=()=>{$("liste").innerHTML=(daten.spieler||[]).map(zeile).join("")};
 $("liste").onclick=e=>{if(e.target.classList.contains("x")){
   const z=e.target.parentNode,n=z.querySelector(".name").value||"diese Zeile";
