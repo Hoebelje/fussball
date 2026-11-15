@@ -60,13 +60,13 @@ const zeichnen=()=>{
   let sp=(daten.spieler||[]).slice();
   if(richtung)sp.sort((a,b)=>richtung*String(a.geburtsdatum||"").localeCompare(String(b.geburtsdatum||"")));
   $("pfeil").textContent=richtung===1?"▲":richtung===-1?"▼":"↕";
-  /* Gruppen nach Altersklasse (Saison beginnt am 1. Juli), älteste zuerst */
+  /* Gruppen nach Altersklasse (Saison beginnt am 1. Juli); Geb.datum aufsteigend = älteste zuerst (U19), absteigend = jüngste zuerst (U15) */
   const h=new Date(),ende=(h.getMonth()>=6?h.getFullYear():h.getFullYear()-1)+1;
   const klasse=s=>{const j=parseInt(String(s.geburtsdatum||"").slice(0,4),10);if(!j)return 0;const a=ende-j;return a%2?a:a+1};
   const gruppen=new Map();
   sp.forEach(s=>{const k=klasse(s);if(!gruppen.has(k))gruppen.set(k,[]);gruppen.get(k).push(s)});
   let nr=0,html="";
-  [...gruppen.keys()].sort((a,b)=>b-a).forEach(k=>{
+  [...gruppen.keys()].sort((a,b)=>richtung===-1?a-b:b-a).forEach(k=>{
     const g=gruppen.get(k);
     html+=k?`<tr class="gruppe"><td colspan="5">U${k}<span>· Jahrgang ${ende-k}/${String(ende-k+1).slice(2)} · ${g.length} ${g.length===1?"Spielerin":"Spielerinnen"}</span></td></tr>`
            :`<tr class="gruppe"><td colspan="5">Ohne Geburtsdatum<span>· ${g.length}</span></td></tr>`;
